@@ -1101,6 +1101,28 @@ dialog { border-radius: 12px; }
 .mv-note-text { font-size: calc(var(--u) * var(--n) * var(--z)); line-height: 1.3; font-weight: 500; white-space: pre-wrap; overflow-wrap: anywhere; }
 .bm .mv-note { --u: 1vmin; border-radius: 1.4vmin; border-top: 1vmin solid #1E87C8; }
 
+/* ===================== Version 6: Karten am Beamer je Farbe ===================== */
+.cb-row { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.cb-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-2); margin-right: 2px; }
+.cb-label .ic { width: 16px; height: 16px; }
+.cb-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; border-radius: 999px; border: 1px dashed var(--border-strong); background: transparent; color: var(--text-2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.cb-chip:hover { border-color: var(--accent); }
+.cb-chip[aria-pressed="true"] { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.cb-dot { width: 12px; height: 16px; border-radius: 2px; flex: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); }
+.cb-chip.green .cb-dot { background: var(--card-green); }
+.cb-chip.yellow .cb-dot { background: var(--card-yellow); }
+.cb-chip.red .cb-dot { background: var(--card-red); }
+.cb-chip[aria-pressed="false"] .cb-dot { opacity: .45; }
+.cb-state { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
+.cb-chip[aria-pressed="true"] .cb-state { color: var(--accent); }
+.page-head .cb-row { margin-top: 12px; }
+.cb-row.in-dlg { margin: 4px 0 14px; }
+.panel > .panel-head:first-child .cb-label { color: rgba(255, 255, 255, .88); }
+.panel > .panel-head:first-child .cb-chip { color: rgba(255, 255, 255, .85); border-color: rgba(255, 255, 255, .5); }
+.panel > .panel-head:first-child .cb-chip[aria-pressed="true"] { background: #FFFFFF; border-color: #FFFFFF; color: #14508C; }
+.panel > .panel-head:first-child .cb-chip[aria-pressed="true"] .cb-state { color: #14508C; }
+.panel > .panel-head:first-child .cb-chip[aria-pressed="false"] .cb-state { color: rgba(255, 255, 255, .7); }
+.panel > .panel-head:first-child .cb-chip:focus-visible { outline-color: #FAE561; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -1273,7 +1295,8 @@ const DEFAULTS = {
   redPolicy: 'reset',        // pause | reset | minus
   noise: { yellow: 45, red: 65, sensitivity: 0, toleranceSec: 2, showLevel: true },
   nameMode: 'auto',          // auto | first | full
-  showCardsOnBeamer: true,
+  showCardsOnBeamer: true,  // alt, nur noch für die Übernahme
+  cardBeamer: null,          // { green, yellow, red }: welche Karten am Beamer erscheinen
   pickNoRepeat: true,
   sound: true,
   beamerTheme: 'board',      // board | paper
@@ -1374,6 +1397,12 @@ function migrate(d) {
   });
   d.cards = Array.isArray(d.cards) ? d.cards : [];
   d.settings = Object.assign({}, DEFAULTS, d.settings || {});
+  {
+    const cb = d.settings.cardBeamer, old = d.settings.showCardsOnBeamer !== false;
+    d.settings.cardBeamer = cb && typeof cb === 'object'
+      ? { green: cb.green !== false, yellow: !!cb.yellow, red: !!cb.red }
+      : { green: old, yellow: old, red: old };
+  }
   d.settings.noise = Object.assign({}, DEFAULTS.noise, d.settings.noise || {});
   d.timer = Object.assign({ state: 'idle', durationSec: 300, remainingSec: 300, endAt: 0, label: '' }, d.timer || {});
   d.message = String(d.message || '');
@@ -1618,6 +1647,12 @@ function pickRandom() {
 }
 
 /* ---------- Karten ---------- */
+const cardOnBeamer = type => !!store.settings.cardBeamer[type];
+function cardBeamerRow(extra = '') {
+  const cb = store.settings.cardBeamer;
+  return `<div class="cb-row ${extra}" role="group" aria-label="Welche Karten erscheinen am Beamer?"><span class="cb-label">${icon('screen')}Am Beamer</span>${['green', 'yellow', 'red'].map(t =>
+    `<button type="button" class="cb-chip ${t}" data-action="card-beamer" data-type="${t}" aria-pressed="${!!cb[t]}" title="${CARD[t].long}: ${cb[t] ? 'erscheint am Beamer' : 'nur im Dashboard'}"><span class="cb-dot" aria-hidden="true"></span>${{ green: 'Lob', yellow: 'Gelb', red: 'Rot' }[t]}<span class="cb-state">${cb[t] ? 'an' : 'aus'}</span></button>`).join('')}</div>`;
+}
 function giveCard(studentId, type, note, show) {
   const c = activeClass(), s = c && c.students.find(x => x.id === studentId);
   if (!s) return;
@@ -1625,7 +1660,7 @@ function giveCard(studentId, type, note, show) {
   store.cards.push(card);
   if (show) send('event', { name: 'card', data: { type, name: displayName(s, c) } });
   commit();
-  toast(`${CARD[type].long} für ${fullName(s)}${card.note ? ' mit Notiz' : ''}`, {
+  toast(`${CARD[type].long} für ${fullName(s)}${card.note ? ' mit Notiz' : ''}${show ? '' : ', nicht am Beamer'}`, {
     undo: () => {
       store.cards = store.cards.filter(k => k.id !== card.id);
       if (show) send('event', { name: 'hide' });
@@ -3331,7 +3366,8 @@ function pageUnterricht(c) {
       </div>
     </section>
     <section class="panel s12">
-      <div class="panel-head"><h2>SuS</h2><span class="muted small">Karte antippen vergibt Lob, Gelb oder Rot. Auf den Namen tippen für Notizen und Anwesenheit.</span></div>
+      <div class="panel-head"><h2>SuS</h2>${cardBeamerRow()}</div>
+      <p class="muted small" style="margin:-6px 0 12px">Karte antippen vergibt Lob, Gelb oder Rot. Auf den Namen tippen für Notizen und Anwesenheit.</p>
       ${c.students.length ? `<div class="sus-grid">${chips}</div>` : `<div class="row"><span class="muted">In dieser Klasse sind noch keine SuS.</span><button class="btn" data-action="nav" data-page="klassen">Namen hinzufügen</button></div>`}
     </section>
     ${questionPanel('s5')}
@@ -3450,7 +3486,7 @@ function pageKarten(c) {
   const cell = v => v ? v : '<span class="zero">0</span>';
   return `
   <div class="page-head">
-    <div><h1>Karten</h1><p class="lead">Lob, gelbe und rote Karten mit Notizen für ${esc(c.name)}. Notizen erscheinen nie am Beamer.</p></div>
+    <div><h1>Karten</h1><p class="lead">Lob, gelbe und rote Karten mit Notizen für ${esc(c.name)}. Notizen erscheinen nie am Beamer. Für jede Farbe stellst du ein, ob sie am Beamer erscheint.</p>${cardBeamerRow()}</div>
     <div class="row">${seg('card-range', [['today', 'Heute'], ['week', 'Diese Woche'], ['all', 'Alle']], range)}<button class="btn" data-action="cards-export" ${log.length ? '' : 'disabled'}>Als CSV exportieren</button></div>
   </div>
   <div class="grid">
@@ -4063,7 +4099,7 @@ function pageEinstellungen() {
       <div class="setting"><span>Namen am Beamer</span>${seg('set', [['auto', 'Automatisch'], ['first', 'Nur Vorname'], ['full', 'Vor- und Nachname']], st.nameMode, 'data-key="nameMode"')}
         <span class="muted small">Automatisch zeigt den Vornamen und hängt den ersten Buchstaben des Nachnamens an, wenn ein Vorname doppelt vorkommt.</span></div>
       <div class="stack">
-        <label class="check"><input type="checkbox" data-change="set-bool" data-key="showCardsOnBeamer" ${st.showCardsOnBeamer ? 'checked' : ''}><span>Lob und Karten am Beamer zeigen (Voreinstellung im Karten-Fenster)</span></label>
+        <div><p class="small" style="margin:0 0 6px"><strong>Karten am Beamer</strong></p>${cardBeamerRow()}<p class="muted small" style="margin:6px 0 0">Ausgeschaltete Farben werden nur im Dashboard notiert. Die Einstellung gilt für alle Klassen und lässt sich auch direkt bei den SuS und im Karten-Fenster umschalten.</p></div>
         <label class="check"><input type="checkbox" data-change="set-bool" data-key="sound" ${st.sound ? 'checked' : ''}><span>Töne für Timer, Sterne und Klassenziel</span></label>
       </div>
     </section>
@@ -4139,7 +4175,7 @@ function openStudentDialog(id) {
       <button class="iconbtn" data-action="dlg-close" aria-label="Schließen">×</button>
     </div>
     <label class="field"><span>Notiz (optional, nur für dich)</span><textarea id="cardNote" rows="2" placeholder="Was ist passiert?"></textarea></label>
-    <label class="check"><input type="checkbox" id="cardShow" ${store.settings.showCardsOnBeamer ? 'checked' : ''}><span>Am Beamer zeigen</span></label>
+    ${cardBeamerRow('in-dlg')}
     <div class="card-buttons">
       <button class="cardbtn green" data-action="give-card" data-type="green"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICONS.star}</svg><span>Lob</span></button>
       <button class="cardbtn yellow" data-action="give-card" data-type="yellow"><span>Gelbe Karte</span></button>
@@ -4229,7 +4265,20 @@ const actions = {
   'ui-toggle': () => { store.settings.uiTheme = isDarkUi() ? 'light' : 'dark'; commit(); },
 
   student: el => openStudentDialog(el.dataset.id),
-  'quick-card': el => giveCard(el.dataset.id, el.dataset.type, '', store.settings.showCardsOnBeamer),
+  'quick-card': el => giveCard(el.dataset.id, el.dataset.type, '', cardOnBeamer(el.dataset.type)),
+  'card-beamer': el => {
+    const t = el.dataset.type, cb = store.settings.cardBeamer;
+    cb[t] = !cb[t];
+    commit();
+    // Auch im offenen Karten-Fenster sofort anzeigen
+    $$(`[data-action="card-beamer"][data-type="${t}"]`).forEach(b => {
+      b.setAttribute('aria-pressed', String(cb[t]));
+      b.title = `${CARD[t].long}: ${cb[t] ? 'erscheint am Beamer' : 'nur im Dashboard'}`;
+      const st = b.querySelector('.cb-state');
+      if (st) st.textContent = cb[t] ? 'an' : 'aus';
+    });
+    toast(`${CARD[t].long} ${cb[t] ? 'erscheint ab jetzt am Beamer.' : 'erscheint ab jetzt nicht mehr am Beamer.'}`);
+  },
   'vocab-dir': () => { store.settings.vocabDir = store.settings.vocabDir === 'de2x' ? 'x2de' : 'de2x'; commit(); const i = $('[data-focus-key="vocab"]'); if (i) i.focus(); },
   'vocab-del': el => { const c = activeClass(); c.vocab.items = c.vocab.items.filter(i => i.id !== el.dataset.id); refreshVocab(); },
   'vocab-alt': el => {
@@ -4365,9 +4414,9 @@ const actions = {
   },
   'dlg-close': () => $('#dlg').close(),
   'give-card': el => {
-    const note = $('#cardNote').value, show = $('#cardShow').checked, id = rt.dlgStudent;
+    const note = $('#cardNote').value, id = rt.dlgStudent;
     $('#dlg').close();
-    giveCard(id, el.dataset.type, note, show);
+    giveCard(id, el.dataset.type, note, cardOnBeamer(el.dataset.type));
   },
   'call-student': () => {
     const c = activeClass(), s = c.students.find(x => x.id === rt.dlgStudent);
