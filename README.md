@@ -35,4 +35,5 @@ PDF.js (Apache 2.0), mammoth.js (BSD-2-Clause), qrcode-generator (MIT). Die Lize
 
 ## Herkunft
 
-Nach einer Idee von [classtiles.de](https://classtiles.de).
+- **Idee und Grundlage:** [classtiles.de](https://classtiles.de)
+- **Weiterentwicklung:** Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Betrieb ohne Nachladen
