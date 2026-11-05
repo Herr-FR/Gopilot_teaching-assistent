@@ -21,11 +21,17 @@ Ein Unterrichtsassistent für Tafel und Beamer im Corporate Design der Multi Med
 
 ## Datenschutz
 
-Alle Klassen, Namen, Karten und Dateien bleiben im Browser des jeweiligen Geräts. Die Seite schickt keine Daten an einen Server. Nur für die Anzeige von PDF- und Word-Dateien und für QR-Codes werden beim ersten Gebrauch kleine Programme von jsDelivr geladen, die Dateien selbst werden dabei nicht hochgeladen. Sichere deine Daten regelmäßig unter *Einstellungen > Backup speichern*.
+Alle Klassen, Namen, Karten und Dateien bleiben im Browser des jeweiligen Geräts. Die Seite schickt keine Eingaben an einen Server, setzt keine Cookies und nutzt kein Tracking. Die Anzeigeprogramme für PDF (PDF.js), Word (mammoth.js) und QR-Codes (qrcode-generator) sowie die Schrift Roboto sind in die Datei eingebaut, es wird nichts nachgeladen.
+
+Externe Dienste kommen nur ins Spiel, wenn du sie selbst nutzt: eingebettete Webseiten und Videos unter *Medien* und die automatische Übersetzung unter *Vokabeln* (Dienst MyMemory, abschaltbar). Sichere deine Daten regelmäßig unter *Einstellungen > Backup speichern*.
 
 ## Aktualisieren
 
 Eine neue Version als `index.html` hochladen. Der Workflow unter `.github/workflows/pages.yml` veröffentlicht sie automatisch nach jedem Push auf `main`.
+
+## Enthaltene Programme
+
+PDF.js (Apache 2.0), mammoth.js (BSD-2-Clause), qrcode-generator (MIT). Die Lizenztexte stehen im Quelltext von `index.html`.
 
 ## Herkunft
 
