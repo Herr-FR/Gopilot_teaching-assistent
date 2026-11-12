@@ -1315,6 +1315,7 @@ const DEFAULTS = {
   vocabAuto: true,           // Wörter automatisch über MyMemory übersetzen
   vocabEmail: '',            // optional, erhöht das Tageslimit des Wörterbuchs
   ligaMode: 'stars',         // stars | rate
+  gopilotUrl: '',            // Adresse der GoPilot-App für QR-Codes ins Portfolio, leer = aus
 };
 const CARD = {
   green: { long: 'Lob' },
@@ -1590,7 +1591,7 @@ function armed(el, fn) {
 }
 
 /* ---------- Timer ---------- */
-function commit() { save(); renderAll(); }
+function commit() { syncGopilot(); save(); renderAll(); }
 function timerSet(sec) {
   const t = store.timer;
   sec = clamp(Math.round(sec), 1, 6 * 3600);
@@ -2345,6 +2346,11 @@ function normalizeUrl(raw) {
     return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u.href : null;
   } catch (e) { return null; }
 }
+// Adresse lesbar anzeigen: ohne https:// und mit Umlauten statt %C3%BC
+function prettyUrl(url) {
+  const u = String(url || '').replace(/^https?:\/\//, '');
+  try { return decodeURIComponent(u).replace(/\+/g, ' '); } catch (e) { return u; }
+}
 const hostOf = url => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return url; } };
 // Bekannte Dienste in ihre Einbettungs-Adresse umschreiben
 function embedUrl(url) {
@@ -2819,6 +2825,36 @@ function normStrats(s) {
 const stratOf = id => (id && store.strats.items.find(i => i.id === id)) || null;
 const secShown = x => x.type === 'qr' ? !!x.url : x.type === 'strategy' ? !!(x.name || stratOf(x.sid)) : true;
 function stratSection() { const b = boardOf('checkin'); return b ? b.sections.find(s => s.type === 'strategy') : null; }
+
+/* ---------- GoPilot: QR-Codes ins Portfolio ----------
+   Ein QR-Code im Check-in oder Check-out öffnet in der GoPilot-App einen vorausgefüllten Portfolio-Eintrag
+   (github.com/Herr-FR/GoPilot_Plugin_Portfolio-Lernmappe). Es fließen keine Daten: der Code enthält nur einen Link. */
+const GOPILOT_TEXT = {
+  checkin: 'Scanne den Code und halte die Lernstrategie des Tages in deinem GoPilot-Portfolio fest.',
+  checkout: 'Scanne den Code und halte deinen Check-out in deinem GoPilot-Lerntagebuch fest.',
+};
+let defaultStratNames = null;
+function gopilotBase() { return store ? String(store.settings.gopilotUrl || '').replace(/\/+$/, '') : ''; }
+function gopilotLink(kind, board) {
+  const base = gopilotBase();
+  if (!base) return '';
+  if (kind === 'checkout') return base + '/portfolio/neu/tagebuch';
+  const x = board ? board.sections.find(s => s.type === 'strategy') : null, s = x ? stratOf(x.sid) : null;
+  if (!s) return base + '/portfolio/neu/strategie';
+  // Strategien der Grundausstattung kennt GoPilot samt Beschreibung, eigene bringen ihre Beschreibung mit
+  if (!defaultStratNames) defaultStratNames = defaultStrategies().map(i => i.name);
+  const q = new URLSearchParams({ name: s.name });
+  if (!defaultStratNames.includes(s.name) && s.text) q.set('text', s.text.slice(0, 300));
+  return base + '/portfolio/neu/strategie?' + q.toString();
+}
+// Hält die GoPilot-QR-Codes aktuell, z. B. nach einer neuen Lernstrategie des Tages oder einer neuen Adresse
+function syncGopilot() {
+  if (!store) return;
+  [store.boards, ...store.classes.map(c => c.boards)].forEach(bs => ['checkin', 'checkout'].forEach(kind => {
+    const b = bs && bs[kind];
+    if (b) b.sections.forEach(x => { if (x.gopilot) x.url = gopilotLink(kind, b); });
+  }));
+}
 function setStrategy(x, item) {
   const st = store.strats;
   x.sid = item.id;
@@ -3115,7 +3151,7 @@ function boardSecHTML(x, sd, lock) {
     </section>`;
   }
   return `<section class="bd-sec bd-qr"><h3>${esc(x.q)}</h3>
-    <div class="bd-qr-row"><div class="bd-qr-code" data-qr="${esc(x.url)}"></div><p>${esc(x.text)}<span class="bd-url">${esc(x.url.replace(/^https?:\/\//, ''))}</span></p></div>
+    <div class="bd-qr-row"><div class="bd-qr-code" data-qr="${esc(x.url)}"></div><p>${esc(x.text)}<span class="bd-url">${esc(prettyUrl(x.url))}</span></p></div>
   </section>`;
 }
 function boardHTML(sd) {
@@ -3921,6 +3957,10 @@ function secEditor(x, kind) {
       <div class="row" style="margin-top:10px"><button class="btn primary small" data-action="strat-random" ${dk} ${st.items.length ? '' : 'disabled'}>${icon('dice')}Zufällig wählen</button><button class="btn small" data-action="nav" data-page="strategien">${icon('bulb')}Bibliothek</button></div>
       ${s ? `<div class="strat-preview"><strong>${esc(s.name)}</strong><p>${esc(s.text)}</p>${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">Mehr erfahren</a>` : ''}</div>`
         : '<p class="muted small" style="margin-top:10px">Wähle eine Strategie aus der Bibliothek oder lass den Zufall entscheiden. Ohne Strategie bleibt dieser Bereich am Beamer ausgeblendet.</p>'}`;
+  } else if (x.gopilot) {
+    body = `${edit('q', 'Überschrift')}${edit('text', 'Text neben dem Code')}
+      <div class="qr-row"><div class="qr-prev" data-qr="${esc(x.url)}">${x.url ? '' : '<span>Keine GoPilot-Adresse</span>'}</div>
+      <p class="muted small">${x.url ? `Führt zu <strong>${esc(prettyUrl(x.url))}</strong>. ${kind === 'checkin' ? 'Der Link passt sich an, sobald du eine andere Lernstrategie des Tages wählst.' : 'Die SuS beantworten dort dieselben Fragen wie hier.'} Es werden keine Daten an GoPilot übertragen.` : 'Trag unter Einstellungen die Adresse eurer GoPilot-App ein, dann erscheint hier der QR-Code.'}</p></div>`;
   } else {
     body = `${edit('q', 'Überschrift')}${edit('text', 'Text neben dem Code')}
       <label class="field"><span>Link</span><input type="text" value="${esc(x.url)}" placeholder="https://… zum Beispiel Moodle-Feedback oder Forms" data-change="bd-sec-url" ${dk} inputmode="url" spellcheck="false"></label>
@@ -3952,6 +3992,10 @@ function pageBoard(kind) {
       <div class="row">
         <label class="check"><input type="checkbox" data-change="bd-flag" data-kind="${kind}" data-field="input" ${b.input ? 'checked' : ''}><span>SuS tippen am Beamer selbst (Touch-Display oder interaktive Tafel)</span></label>
         <label class="check"><input type="checkbox" data-change="bd-flag" data-kind="${kind}" data-field="moderate" ${b.moderate ? 'checked' : ''}><span>Neue Karten erst nach meiner Freigabe zeigen</span></label>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" data-action="bd-gopilot" data-kind="${kind}">${icon('screen')}GoPilot-QR</button>
+        <span class="muted small">${gopilotBase() ? (kind === 'checkin' ? 'Ein QR-Code öffnet bei den SuS die Lernstrategie des Tages als Eintrag in ihrem GoPilot-Portfolio.' : 'Ein QR-Code öffnet bei den SuS einen Lerntagebuch-Eintrag mit diesen Fragen in ihrem GoPilot-Portfolio.') : 'Für den GoPilot-QR trägst du unter Einstellungen die Adresse eurer GoPilot-App ein.'}</span>
       </div>
       <div class="row" style="margin-top:14px">
         <button class="btn" data-action="bd-export" data-kind="${kind}">Ergebnisse als Text speichern</button>
@@ -4114,10 +4158,15 @@ function pageEinstellungen() {
       </div>
     </section>
     <section class="panel s6">
-      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 7</span></div>
+      <div class="panel-head"><h2>GoPilot</h2></div>
+      <label class="field"><span>Adresse eurer GoPilot-App</span><input type="text" value="${esc(st.gopilotUrl)}" placeholder="https://gopilot.schule.de" data-change="set-gopilot" inputmode="url" spellcheck="false"></label>
+      <p class="muted small">Mit Adresse gibt es im Check-in und Check-out den Knopf <strong>GoPilot-QR</strong>. Der QR-Code öffnet bei den SuS einen vorausgefüllten Eintrag in ihrem GoPilot-Portfolio: die Lernstrategie des Tages oder einen Lerntagebuch-Eintrag mit den Check-out-Fragen. Der Code enthält nur einen Link, es werden keine Daten aus dem Teaching Assistant übertragen. Leer lassen schaltet die Funktion aus.</p>
+    </section>
+    <section class="panel s6">
+      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 8</span></div>
       <dl class="about">
         <dt>Idee und Grundlage</dt><dd><a href="https://classtiles.de" target="_blank" rel="noopener">classtiles.de</a></dd>
-        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Betrieb ohne Nachladen</dd>
+        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
         <dt>Quellcode</dt><dd><a href="https://github.com/Herr-FR/Gopilot_teaching-assistent" target="_blank" rel="noopener">github.com/Herr-FR/Gopilot_teaching-assistent</a></dd>
         <dt>Enthaltene Programme</dt><dd>PDF.js (Apache 2.0), mammoth.js (BSD-2) und qrcode-generator (MIT). Die Lizenztexte stehen im Quelltext dieser Datei.</dd>
       </dl>
@@ -4398,6 +4447,25 @@ const actions = {
   },
   'bd-item-del': el => { const x = secOf(el.dataset.kind, el.dataset.sec); if (x) { x.items = x.items.filter(i => i.id !== el.dataset.item); commit(); } },
   'bd-reset': el => armed(el, () => resetBoard(el.dataset.kind)),
+  'bd-gopilot': el => {
+    const kind = el.dataset.kind, b = boardOf(kind);
+    if (!b) return;
+    if (!gopilotBase()) {
+      rt.page = 'einstellungen';
+      renderAll();
+      window.scrollTo(0, 0);
+      toast('Trag zuerst die Adresse eurer GoPilot-App ein.');
+      return;
+    }
+    let x = b.sections.find(s => s.gopilot);
+    if (!x) {
+      x = boardSec('qr', { q: 'In GoPilot festhalten', text: GOPILOT_TEXT[kind], url: '', gopilot: true });
+      b.sections.push(x);
+    }
+    x.on = true;
+    commit();
+    toast('GoPilot-QR ist bereit. Mit „Groß zeigen“ erscheint er bildschirmfüllend am Beamer.');
+  },
   'bd-export': el => exportBoard(el.dataset.kind),
   'mk-show': showMarket,
   'mk-view': el => { store.market.view = el.dataset.val; commit(); },
@@ -4559,6 +4627,13 @@ const changes = {
   'class-select': el => { store.activeClassId = el.value; rt.streakSec = 0; rt.recordAnnounced = false; commit(); },
   'pick-norepeat': el => { store.settings.pickNoRepeat = el.checked; commit(); },
   'set-bool': el => { store.settings[el.dataset.key] = el.checked; commit(); },
+  'set-gopilot': el => {
+    const v = el.value.trim();
+    if (v && !normalizeUrl(v)) { toast('Das sieht nicht wie eine Webadresse aus.'); return; }
+    store.settings.gopilotUrl = v ? normalizeUrl(v).replace(/\/+$/, '') : '';
+    commit();
+    toast(v ? 'GoPilot-Adresse gespeichert.' : 'GoPilot-QR ausgeschaltet.');
+  },
   'noise-showlevel': el => { store.settings.noise.showLevel = el.checked; save(); pushState(); },
   mps: el => { store.settings.minutesPerStar = clamp(Math.round(+el.value) || 5, 1, 60); commit(); },
   'goal-target': el => {

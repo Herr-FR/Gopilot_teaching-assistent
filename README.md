@@ -10,6 +10,21 @@ Ein Unterrichtsassistent für Tafel und Beamer im Corporate Design der Multi Med
 - Check-in mit Lernstrategie des Tages und Check-out mit Zufriedenheit, Lichtblicken und Reflexionsfragen
 - Bibliothek mit Lernstrategien, Zufallsfragen in Fragenboxen, Sessionmarkt mit Warteliste
 - Medien am Beamer: Webseiten, PDF, Bilder, Word, Videos und Text, dazu ein Fokus-Modus
+- QR-Codes, die bei den SuS einen vorausgefüllten Eintrag im GoPilot-Portfolio öffnen
+
+## GoPilot-Portfolio per QR-Code
+
+Der Teaching Assistant arbeitet mit der [GoPilot-Portfolio-Lernmappe](https://github.com/Herr-FR/GoPilot_Plugin_Portfolio-Lernmappe) zusammen:
+
+1. Unter **Einstellungen > GoPilot** die Adresse eurer GoPilot-App eintragen, z. B. `https://gopilot.schule.de`.
+2. Im **Check-in** oder **Check-out** auf **GoPilot-QR** klicken und den Bereich mit **Groß zeigen** an den Beamer holen.
+3. Die SuS scannen den Code mit dem Handy. GoPilot öffnet einen vorausgefüllten Eintrag in ihrem Portfolio:
+   - **Check-in:** die Lernstrategie des Tages mit Beschreibung, unter *Lernstrategien*. Wählst du eine andere Strategie, passt sich der Code automatisch an.
+   - **Check-out:** ein Lerntagebuch-Eintrag mit denselben Fragen wie am Beamer.
+
+Der QR-Code enthält nur einen Link. Aus dem Teaching Assistant werden keine Daten an GoPilot oder Moodle übertragen, alles bleibt wie bisher im Browser. Ohne GoPilot-Adresse ist die Funktion aus.
+
+![GoPilot-QR am Beamer](docs/gopilot-qr.png)
 
 ## Nutzung
 
@@ -36,4 +51,4 @@ PDF.js (Apache 2.0), mammoth.js (BSD-2-Clause), qrcode-generator (MIT). Die Lize
 ## Herkunft
 
 - **Idee und Grundlage:** [classtiles.de](https://classtiles.de)
-- **Weiterentwicklung:** Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Betrieb ohne Nachladen
+- **Weiterentwicklung:** Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio
