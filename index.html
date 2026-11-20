@@ -1377,7 +1377,7 @@ const CARD = {
 };
 const LIGHTS = ['green', 'yellow', 'red'];
 const LIGHT_NAMES = { red: 'Rot', yellow: 'Gelb', green: 'Grün' };
-const FOCUS_TARGETS = [['stage', 'Bühne'], ['timer', 'Timer'], ['clock', 'Uhr'], ['ampel', 'Ampel'], ['stars', 'Sterne'], ['message', 'Hinweis'], ['vocab', 'Vokabeln']];
+const FOCUS_TARGETS = [['stage', 'Bühne'], ['timer', 'Timer'], ['clock', 'Uhr'], ['ampel', 'Ampel'], ['stars', 'Sterne'], ['message', 'Hinweis']];
 const DEMO_NAMES = ['Anna Becker', 'Ben Schulz', 'Clara Wagner', 'David Hoffmann', 'Elif Yılmaz', 'Emil Fischer', 'Finn Weber', 'Greta Schäfer', 'Hannah Koch', 'Jonas Richter', 'Lea Klein', 'Leon Wolf', 'Lina Neumann', 'Luca Schwarz', 'Max Werner', 'Max Peters', 'Mia Zimmermann', 'Milan Braun', 'Noah Krüger', 'Paula Hartmann', 'Samira Haddad', 'Theo Lange', 'Tom Krause', 'Yusuf Demir', 'Zoe Lehmann'];
 
 const ICONS = {
@@ -1429,7 +1429,6 @@ const PAGES = [
   ['laut', 'Lautstärke', 'mic'],
   ['karten', 'Karten', 'cards'],
   ['sterne', 'Sterne', 'star'],
-  ['vokabeln', 'Vokabeln', 'book'],
   ['markt', 'Sessionmarkt', 'market'],
   ['checkout', 'Check-out', 'checkout'],
   ['klassen', 'Klassen', 'users'],
@@ -1437,7 +1436,7 @@ const PAGES = [
 ];
 // Hauptmenüs: [Seite des Hauptmenüs, Seiten im Untermenü]
 const NAV_GROUPS = [
-  ['unterricht', ['zufall', 'fragen', 'timer', 'laut', 'sterne', 'karten', 'vokabeln', 'klassen']],
+  ['unterricht', ['zufall', 'fragen', 'timer', 'laut', 'sterne', 'karten', 'klassen']],
   ['beamer', ['medien', 'markt', 'einstellungen']],
   ['checkin', ['strategien']],
   ['checkout', []],
@@ -2042,9 +2041,7 @@ function snapshot() {
     reward: bm.stars ? reward : null,
     stage: stageDesc(),
     focus: store.focus,
-    vocab: c && c.vocab.show && c.vocab.items.length
-      ? { lang: langName(c.vocab.lang), items: c.vocab.items.slice(0, 14).map(i => ({ id: i.id, de: i.de, fx: i.fx, pending: !!i.pending })) }
-      : null,
+    vocab: null,
   };
 }
 function pushState() {
@@ -3439,7 +3436,6 @@ function emptyState() {
     zufall: 'Der Zufall zieht Namen aus deiner Klasse. Dafür braucht der Teaching Assistant eine Klasse mit Namen.',
     karten: 'Lob, gelbe und rote Karten vergibst du an SuS einer Klasse. Dafür braucht der Teaching Assistant eine Klasse mit Namen.',
     sterne: 'Sterne sammelt jede Klasse für sich. Lege dafür zuerst eine Klasse an.',
-    vokabeln: 'Die Vokabelliste gehört zu einer Klasse. Lege dafür zuerst eine Klasse an.',
   }[rt.page];
   return `<div class="empty">
     <h1>${rt.page === 'unterricht' ? 'Willkommen' : esc(label)}</h1>
@@ -3458,7 +3454,7 @@ function beamerInfoPanel(span) {
   const d = stageDesc(), bm = store.beamer, c = activeClass();
   const what = !d ? (store.timer.state !== 'idle' && bm.timer ? 'Timer' : 'Uhr')
     : d.kind === 'board' ? boardOf(d.board).title : d.kind === 'market' ? store.market.title : d.kind === 'question' ? 'Zufallsfrage' : d.name;
-  const on = [bm.timer && 'Timer', bm.ampel && rt.noise.source !== 'off' && 'Ampel', bm.stars && c && 'Sterne', bm.message && store.message.trim() && 'Hinweis', c && c.vocab.show && c.vocab.items.length && 'Vokabeln', bm.picks && 'Namen'].filter(Boolean);
+  const on = [bm.timer && 'Timer', bm.ampel && rt.noise.source !== 'off' && 'Ampel', bm.stars && c && 'Sterne', bm.message && store.message.trim() && 'Hinweis', bm.picks && 'Namen'].filter(Boolean);
   return `<section class="panel ${span} bm-info">
     <div class="panel-head"><h2>Am Beamer</h2><button class="btn primary" data-action="nav" data-page="beamer">${icon('screen')}Beamer steuern</button></div>
     <div class="stage-title">${icon(d ? (d.kind === 'board' ? d.board : d.kind === 'market' ? 'market' : d.kind === 'question' ? 'question' : catIcon(d.cat)) : 'timer')}<strong>${esc(what)}</strong><span class="muted small">auf der Hauptfläche${store.focus ? ', Fokus an' : ''}</span></div>
@@ -3476,7 +3472,7 @@ function pageBeamer(c) {
   const bq = store.qboxes.some(b => b.items.length), mk = store.market.sessions.length;
   const tile = (id, ic, label, sub, action, attrs = '', disabled = false) => `<button class="src-tile" data-action="${action}" ${attrs} aria-pressed="${cur === id}" ${disabled ? 'disabled' : ''}>${icon(ic)}<strong>${label}</strong><span class="muted small">${sub}</span></button>`;
   const media = [...store.media].sort((a, b) => (b.used || b.t) - (a.used || a.t));
-  const avail = { stage: !!stageDesc(), timer: bm.timer, clock: true, ampel: bm.ampel && rt.noise.source !== 'off', stars: bm.stars && !!c, message: bm.message && !!store.message.trim(), vocab: !!(c && c.vocab.show && c.vocab.items.length) };
+  const avail = { stage: !!stageDesc(), timer: bm.timer, clock: true, ampel: bm.ampel && rt.noise.source !== 'off', stars: bm.stars && !!c, message: bm.message && !!store.message.trim() };
   const liga = ligaRows();
   return `
   <div class="page-head"><div><h1>Beamer</h1><p class="lead">Hier legst du fest, was am Beamer zu sehen ist: was groß auf der Hauptfläche läuft, was zusätzlich eingeblendet wird und was im Fokus steht. In allen anderen Bereichen bereitest du Inhalte nur vor.</p></div>
@@ -3505,7 +3501,6 @@ function pageBeamer(c) {
         ${bmToggle('ampel', 'Ampel', rt.noise.source === 'off' ? 'Die Ampel ist unter Lautstärke gerade aus.' : 'Lautstärke-Ampel am Rand.', bm.ampel,
           bm.ampel ? `<label class="check small sub"><input type="checkbox" data-change="noise-showlevel" ${st.noise.showLevel ? 'checked' : ''}><span>Pegelbalken daneben</span></label>` : '')}
         ${bmToggle('stars', 'Sterne und Klassenziel', c ? 'Leiste unten mit Sternen, Ziel und Liga-Platz.' : 'Erscheint, sobald eine Klasse gewählt ist.', bm.stars)}
-        ${c ? bmToggle('vocab', 'Vokabeln', `Liste links für ${esc(c.name)}${c.vocab.items.length ? '' : ', noch leer'}.`, c.vocab.show) : ''}
         ${bmToggle('picks', 'Namen aus dem Zufall', 'Auslosung und Aufrufen erscheinen groß.', bm.picks)}
         ${bmToggle('message', 'Hinweis unter der Uhr', 'Zum Beispiel die aktuelle Aufgabe.', bm.message, `<div class="row nowrap sub">
           <input type="text" value="${esc(store.message)}" data-input="message" placeholder="z. B. Buch S. 34, Nr. 2 a bis c" aria-label="Hinweis am Beamer">
@@ -3540,7 +3535,7 @@ function pageBeamer(c) {
         <li>Zieh dieses Fenster auf den Beamer-Bildschirm und drücke dort die Taste F für Vollbild.</li>
         <li>Auf dieser Seite legst du fest, was am Beamer erscheint. Die Anzeige folgt sofort.</li>
       </ol>
-      <p class="muted small" style="margin-top:12px">Spiegelt dein Laptop nur den Bildschirm, zeig einfach das Beamer-Fenster im Vollbild. Dort startet und pausiert die Leertaste den Timer, Z zieht einen Namen und Esc schließt eine Einblendung. Im Dashboard gilt dasselbe, dazu springt V in die Vokabel-Eingabe. Q zieht eine Zufallsfrage, die Pfeiltasten (auch ein Presenter) blättern in PDFs und zur nächsten Frage, Esc beendet den Fokus. Für die Mikrofon-Ampel öffne die Datei am besten in Chrome.</p>
+      <p class="muted small" style="margin-top:12px">Spiegelt dein Laptop nur den Bildschirm, zeig einfach das Beamer-Fenster im Vollbild. Dort startet und pausiert die Leertaste den Timer, Z zieht einen Namen und Esc schließt eine Einblendung. Im Dashboard gilt dasselbe. Q zieht eine Zufallsfrage, die Pfeiltasten (auch ein Presenter) blättern in PDFs und zur nächsten Frage, Esc beendet den Fokus. Für die Mikrofon-Ampel öffne die Datei am besten in Chrome.</p>
     </section>
   </div>`;
 }
@@ -3625,7 +3620,6 @@ function pageUnterricht(c) {
     </section>
     ${questionPanel('s5')}
     ${beamerInfoPanel('s7')}
-    ${vocabPanel(c, 's12')}
   </div>`;
 }
 
@@ -4370,7 +4364,7 @@ function pageEinstellungen() {
       <p class="muted small">Mit Adresse gibt es im Check-in und Check-out den Knopf <strong>GoPilot-QR</strong>. Der QR-Code öffnet bei den SuS einen vorausgefüllten Eintrag in ihrem GoPilot-Portfolio: die Lernstrategie des Tages oder einen Lerntagebuch-Eintrag mit den Check-out-Fragen. Der Code enthält nur einen Link, es werden keine Daten aus dem Teaching Assistant übertragen. Leer lassen schaltet die Funktion aus.</p>
     </section>
     <section class="panel s6">
-      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 10</span></div>
+      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 11</span></div>
       <dl class="about">
         <dt>Idee und Grundlage</dt><dd><a href="https://classtiles.de" target="_blank" rel="noopener">classtiles.de</a></dd>
         <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Beamer-Zentrale, Menü mit Untermenüs, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
@@ -4380,7 +4374,7 @@ function pageEinstellungen() {
     </section>
     <section class="panel s6">
       <div class="panel-head"><h2>Daten</h2></div>
-      <p>Klassen, Karten und Sterne bleiben in diesem Browser auf diesem Gerät und werden nicht hochgeladen. Nur für die Vokabel-Übersetzung geht das eingetippte Wort an den Wörterbuchdienst MyMemory. Speichere regelmäßig ein Backup, denn beim Löschen der Browserdaten gehen die Daten verloren. Dateien aus Medien stecken nicht im Backup, nur ihre Namen und Links.</p>
+      <p>Klassen, Karten und Sterne bleiben in diesem Browser auf diesem Gerät und werden nicht hochgeladen. Es werden keine Daten an fremde Dienste geschickt. Speichere regelmäßig ein Backup, denn beim Löschen der Browserdaten gehen die Daten verloren. Dateien aus Medien stecken nicht im Backup, nur ihre Namen und Links.</p>
       ${storageOk ? '' : '<p class="confirm-box">Dieser Browser erlaubt gerade kein dauerhaftes Speichern. Sichere deine Daten unbedingt per Backup.</p>'}
       <div class="row">
         <button class="btn" data-action="backup-export">Backup speichern</button>
@@ -4418,7 +4412,7 @@ function renderAll() {
     <span class="spacer"></span>
     <button class="btn ghost icon-only" data-action="ui-toggle" aria-label="${dark ? 'Helles Design' : 'Dunkles Design'}" title="${dark ? 'Helles Design' : 'Dunkles Design'}">${icon(dark ? 'sun' : 'moon')}</button>
     <button class="btn primary" data-action="nav" data-page="beamer" ${rt.page === 'beamer' ? 'aria-current="page"' : ''} title="Alles, was am Beamer erscheint">${icon('screen')}<span> Beamer${store.focus ? ' · Fokus' : ''}</span></button>`;
-  const pages = { beamer: pageBeamer, unterricht: pageUnterricht, zufall: pageZufall, timer: pageTimer, laut: pageLaut, karten: pageKarten, sterne: pageSterne, vokabeln: pageVokabeln, fragen: pageFragen, medien: pageMedien, checkin: pageCheckin, strategien: pageStrategien, checkout: pageCheckout, markt: pageMarkt, klassen: pageKlassen, einstellungen: pageEinstellungen };
+  const pages = { beamer: pageBeamer, unterricht: pageUnterricht, zufall: pageZufall, timer: pageTimer, laut: pageLaut, karten: pageKarten, sterne: pageSterne, fragen: pageFragen, medien: pageMedien, checkin: pageCheckin, strategien: pageStrategien, checkout: pageCheckout, markt: pageMarkt, klassen: pageKlassen, einstellungen: pageEinstellungen };
   $('#page').innerHTML = pages[rt.page](c);
   const slot = $('[data-region="stage-preview"]');
   if (slot && rt.preview) { slot.appendChild(rt.preview.host); rt.preview.show(stageDesc()); }
@@ -5089,7 +5083,6 @@ function initDashboard() {
     else if ((e.key === 'ArrowRight' || e.key === 'PageDown') && store.stage) { if (stagePage(1)) e.preventDefault(); }
     else if ((e.key === 'ArrowLeft' || e.key === 'PageUp') && store.stage) { if (stagePage(-1)) e.preventDefault(); }
     else if (e.key === 'Escape' && store.focus) { store.focus = null; commit(); }
-    else if (key === 'v') { const input = $('[data-focus-key="vocab"]'); if (input) { e.preventDefault(); input.focus(); } }
   });
   // Änderungen vom Beamer, die während des Tippens kamen, nachholen
   document.addEventListener('focusout', e => {

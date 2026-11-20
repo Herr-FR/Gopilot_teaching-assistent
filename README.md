@@ -6,11 +6,11 @@ Ein Unterrichtsassistent für Tafel und Beamer im Corporate Design der Multi Med
 
 ## Funktionen
 
-- Unterricht: Zufall, Timer, Lautstärke-Ampel, Karten, Sterne und Klassenziel, Vokabeln
+- Unterricht: Zufall, Timer, Lautstärke-Ampel, Karten, Sterne und Klassenziel
 - Check-in mit Lernstrategie des Tages und Check-out mit Zufriedenheit, Lichtblicken und Reflexionsfragen
 - Bibliothek mit Lernstrategien, Zufallsfragen in Fragenboxen, Sessionmarkt mit Warteliste
 - Medien am Beamer: Webseiten, PDF, Bilder, Word, Videos und Text, dazu ein Fokus-Modus
-- Vier Hauptmenüs mit Untermenüs: **Unterricht** (Zufall, Zufallsfragen, Timer, Lautstärke, Sterne, Karten, Vokabeln, Klassen), **Beamer** (Medien, Sessionmarkt, Einstellungen), **Check-in** (Lernstrategien) und **Check-out**
+- Vier Hauptmenüs mit Untermenüs: **Unterricht** (Zufall, Zufallsfragen, Timer, Lautstärke, Sterne, Karten, Klassen), **Beamer** (Medien, Sessionmarkt, Einstellungen), **Check-in** (Lernstrategien) und **Check-out**
 - Bereich **Beamer** als zentrale Steuerung: Hauptfläche, Einblendungen, Karten, Fokus und Darstellung an einer Stelle
 - QR-Codes, die bei den SuS einen vorausgefüllten Eintrag im GoPilot-Portfolio öffnen
 
@@ -40,7 +40,7 @@ Der QR-Code enthält nur einen Link. Aus dem Teaching Assistant werden keine Dat
 
 Alle Klassen, Namen, Karten und Dateien bleiben im Browser des jeweiligen Geräts. Die Seite schickt keine Eingaben an einen Server, setzt keine Cookies und nutzt kein Tracking. Die Anzeigeprogramme für PDF (PDF.js), Word (mammoth.js) und QR-Codes (qrcode-generator) sowie die Schrift Roboto sind in die Datei eingebaut, es wird nichts nachgeladen.
 
-Externe Dienste kommen nur ins Spiel, wenn du sie selbst nutzt: eingebettete Webseiten und Videos unter *Medien* und die automatische Übersetzung unter *Vokabeln* (Dienst MyMemory, abschaltbar). Sichere deine Daten regelmäßig unter *Einstellungen > Backup speichern*.
+Externe Dienste kommen nur ins Spiel, wenn du sie selbst nutzt: eingebettete Webseiten und Videos unter *Medien*. Sichere deine Daten regelmäßig unter *Einstellungen > Backup speichern*.
 
 ## Aktualisieren
 
