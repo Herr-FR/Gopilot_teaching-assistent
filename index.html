@@ -1133,6 +1133,35 @@ dialog { border-radius: 12px; }
 .about dd { margin: 0; overflow-wrap: anywhere; }
 .about a { color: var(--accent); }
 @media (max-width: 760px) { .about { grid-template-columns: 1fr; } .about dd { margin-bottom: 6px; } }
+/* ===================== Version 9: Beamer-Zentrale ===================== */
+.src-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.src-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px 14px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--field); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s; min-height: 96px; }
+.src-tile .ic { width: 24px; height: 24px; color: #1E87C8; margin-bottom: 4px; }
+.src-tile strong { font-size: 15px; line-height: 1.25; }
+.src-tile:hover:not(:disabled) { border-color: var(--accent); }
+.src-tile[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+.src-tile[aria-pressed="true"]::after { content: "Läuft am Beamer"; margin-top: 4px; font-size: 12px; font-weight: 700; color: #14508C; background: #FAE561; padding: 2px 8px; border-radius: 99px; }
+.src-tile:disabled { opacity: .45; cursor: not-allowed; }
+.bm-sub { margin: 20px 0 8px; font-size: 14px; }
+.chip[disabled] { opacity: .45; cursor: not-allowed; }
+.chip .ic { width: 15px; height: 15px; vertical-align: -3px; margin-right: 4px; }
+.bm-toggles { display: grid; gap: 0; }
+.bm-toggle { padding: 11px 0; border-bottom: 1px solid var(--border); }
+.bm-toggle:last-child { border-bottom: 0; }
+.bm-toggle > .check > span { display: flex; flex-direction: column; gap: 2px; }
+.bm-toggle .sub { margin: 8px 0 0 28px; }
+.bm-toggle .cb-row { margin-top: 2px; }
+.bm-link { white-space: nowrap; }
+.bm-link.on { background: #FAE561; color: #14508C; border-color: #FAE561; }
+.bm-link.on:hover { border-color: #14508C; }
+.cb-note .ic { width: 15px; height: 15px; vertical-align: -3px; margin-right: 4px; }
+.add-sec { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+.add-sec-label { font-weight: 700; font-size: 14px; margin-right: 4px; }
+.sec-tools { gap: 6px; }
+.sec-type { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #B9DCF5; margin-bottom: 2px; }
+.linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.bm-info .stage-title { margin-bottom: 8px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -1366,6 +1395,7 @@ const ICONS = {
 const icon = name => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 const PAGES = [
   ['unterricht', 'Unterricht', 'board'],
+  ['beamer', 'Beamer', 'screen'],
   ['checkin', 'Check-in', 'checkin'],
   ['strategien', 'Lernstrategien', 'bulb'],
   ['zufall', 'Zufall', 'dice'],
@@ -1435,6 +1465,15 @@ function migrate(d) {
   d.stage = d.stage && typeof d.stage === 'object' && (d.stage.kind !== 'media' || d.media.some(m => m.id === d.stage.id)) ? d.stage : null;
   if (d.stage && d.stage.kind === 'screen') d.stage = null;
   d.focus = FOCUS_TARGETS.some(([k]) => k === d.focus) ? d.focus : null;
+  {
+    const bm = d.beamer && typeof d.beamer === 'object' ? d.beamer : {};
+    d.beamer = {};
+    ['timer', 'ampel', 'stars', 'message', 'picks'].forEach(k => { d.beamer[k] = bm[k] !== false; });
+  }
+  // Die aktuelle Zufallsfrage steht für sich, die Bühne zeigt sie nur an
+  if (!d.qcur && d.stage && d.stage.kind === 'question' && d.stage.qid) d.qcur = { boxId: d.stage.boxId, qid: d.stage.qid, showAnswer: !!d.stage.showAnswer, draw: d.stage.draw || uid() };
+  d.qcur = d.qcur && typeof d.qcur === 'object' && d.qboxes.some(b => b.id === d.qcur.boxId && b.items.some(q => q.id === d.qcur.qid)) ? d.qcur : null;
+  if (d.stage && d.stage.kind === 'question') d.stage = d.qcur ? { kind: 'question' } : null;
   if (!d.classes.some(c => c.id === d.activeClassId)) d.activeClassId = d.classes[0] ? d.classes[0].id : null;
   return d;
 }
@@ -1627,7 +1666,7 @@ function timerCheck() {
   t.state = 'done'; t.remainingSec = 0;
   save();
   playGong();
-  send('event', { name: 'timerEnd', data: { label: t.label } });
+  if (store.beamer.timer) send('event', { name: 'timerEnd', data: { label: t.label } });
   toast('Die Zeit ist um.');
   rt.liveCache = {};
   pushState();
@@ -1651,7 +1690,7 @@ function pickRandom() {
   c.pick.drawn.push(chosen.id);
   c.pick.history.unshift({ id: chosen.id, t: Date.now() });
   c.pick.history = c.pick.history.slice(0, 40);
-  send('event', { name: 'pick', data: { name: displayName(chosen, c), roll: shuffle(pool.map(s => displayName(s, c))).slice(0, 24) } });
+  if (store.beamer.picks) send('event', { name: 'pick', data: { name: displayName(chosen, c), roll: shuffle(pool.map(s => displayName(s, c))).slice(0, 24) } });
   rt.pickFlash = true;
   commit();
   rt.pickFlash = false;
@@ -1663,6 +1702,10 @@ function cardBeamerRow(extra = '') {
   const cb = store.settings.cardBeamer;
   return `<div class="cb-row ${extra}" role="group" aria-label="Welche Karten erscheinen am Beamer?"><span class="cb-label">${icon('screen')}Am Beamer</span>${['green', 'yellow', 'red'].map(t =>
     `<button type="button" class="cb-chip ${t}" data-action="card-beamer" data-type="${t}" aria-pressed="${!!cb[t]}" title="${CARD[t].long}: ${cb[t] ? 'erscheint am Beamer' : 'nur im Dashboard'}"><span class="cb-dot" aria-hidden="true"></span>${{ green: 'Lob', yellow: 'Gelb', red: 'Rot' }[t]}<span class="cb-state">${cb[t] ? 'an' : 'aus'}</span></button>`).join('')}</div>`;
+}
+function cardBeamerText() {
+  const on = ['green', 'yellow', 'red'].filter(t => store.settings.cardBeamer[t]).map(t => ({ green: 'Lob', yellow: 'Gelb', red: 'Rot' }[t]));
+  return on.length === 3 ? 'alle Karten' : on.length ? on.join(' und ') : 'keine Karten';
 }
 function giveCard(studentId, type, note, show) {
   const c = activeClass(), s = c && c.students.find(x => x.id === studentId);
@@ -1691,11 +1734,11 @@ function addStars(c, n) {
   const g = r.goal;
   if (n > 0 && g.target > 0 && !g.reachedAt && r.total - g.base >= g.target) {
     g.reachedAt = Date.now();
-    send('event', { name: 'goal', data: { reward: g.reward, target: g.target } });
+    if (store.beamer.stars) send('event', { name: 'goal', data: { reward: g.reward, target: g.target } });
     playFanfare();
     toast(`${c.name} hat das Klassenziel erreicht${g.reward ? ': ' + g.reward : ''}!`);
   } else {
-    send('event', { name: 'star', data: { n, total: r.total } });
+    if (store.beamer.stars) send('event', { name: 'star', data: { n, total: r.total } });
     if (n > 0) playChime();
   }
   rt.dirty = true;
@@ -1866,7 +1909,7 @@ function accrue(dt) {
     if (rt.streakSec > r.bestStreakSec) {
       if (!rt.recordAnnounced && r.bestStreakSec >= 60) {
         rt.recordAnnounced = true;
-        send('event', { name: 'record', data: { sec: r.bestStreakSec } });
+        if (store.beamer.ampel) send('event', { name: 'record', data: { sec: r.bestStreakSec } });
         toast(`${c.name} knackt den Ruhe-Rekord!`);
       }
       r.bestStreakSec = rt.streakSec;
@@ -1937,13 +1980,14 @@ function snapshot() {
       yellowPolicy: st.yellowPolicy, redPolicy: st.redPolicy,
     };
   }
+  const bm = store.beamer;
   return {
     className: c ? c.name : '',
     theme: st.beamerTheme,
-    message: store.message,
-    timer: store.timer,
-    noise: { source: n.source, light: n.light, level: n.level, yellow: st.noise.yellow, red: st.noise.red, showLevel: st.noise.showLevel },
-    reward,
+    message: bm.message ? store.message : '',
+    timer: bm.timer ? store.timer : Object.assign({}, store.timer, { state: 'idle' }),
+    noise: { source: bm.ampel ? n.source : 'off', light: n.light, level: n.level, yellow: st.noise.yellow, red: st.noise.red, showLevel: st.noise.showLevel },
+    reward: bm.stars ? reward : null,
     stage: stageDesc(),
     focus: store.focus,
     vocab: c && c.vocab.show && c.vocab.items.length
@@ -2616,7 +2660,7 @@ async function addFiles(files) {
   if (!added) return;
   commit();
   const temp = store.media.slice(0, added).some(m => m.temp);
-  toast(`${added} ${added === 1 ? 'Datei' : 'Dateien'} gespeichert${temp ? ', aber nur bis zum Schließen, weil der Browser keinen Speicher erlaubt' : ''}. Mit „Zeigen“ erscheint sie am Beamer.`);
+  toast(`${added} ${added === 1 ? 'Datei' : 'Dateien'} gespeichert${temp ? ', aber nur bis zum Schließen, weil der Browser keinen Speicher erlaubt' : ''}. Zeigen kannst du sie unter Beamer.`);
 }
 function addWeb(raw, title = '') {
   const url = normalizeUrl(raw);
@@ -2665,7 +2709,7 @@ function stageSet(patch) {
 function stagePage(dir) {
   const s = store.stage;
   if (!s) return false;
-  if (s.kind === 'question') { if (dir > 0) drawQuestion(s.boxId); return true; }
+  if (s.kind === 'question') { if (dir > 0) drawQuestion(store.qcur && store.qcur.boxId); return true; }
   if (s.kind === 'board' || s.kind === 'market') {
     const obj = s.kind === 'market' ? store.market : boardOf(s.board);
     if (!obj) return false;
@@ -2698,9 +2742,9 @@ function stageDesc() {
   if (s.kind === 'board') return boardDesc(s.board);
   if (s.kind === 'market') return { kind: 'market', m: marketDesc() };
   if (s.kind === 'question') {
-    const b = store.qboxes.find(x => x.id === s.boxId), q = b && b.items.find(x => x.id === s.qid);
-    if (!q) return null;
-    return { kind: 'question', box: b.name, q: q.q, a: q.a, showAnswer: !!s.showAnswer, draw: s.draw };
+    const cur = currentQuestion();
+    if (!cur) return null;
+    return { kind: 'question', box: cur.b.name, q: cur.q.q, a: cur.q.a, showAnswer: !!store.qcur.showAnswer, draw: store.qcur.draw };
   }
   if (s.kind === 'screen') return { kind: 'media', key: 's:' + s.rev, cat: 'screen', name: 'Geteiltes Fenster' };
   const m = store.media.find(x => x.id === s.id);
@@ -2755,11 +2799,24 @@ async function importQuestionsFile(file) {
 function setQuestion(b, q) {
   if (b.noRepeat && !b.drawn.includes(q.id)) b.drawn.push(q.id);
   store.activeBoxId = b.id;
-  store.stage = { kind: 'question', boxId: b.id, qid: q.id, showAnswer: false, draw: uid() };
-  send('event', { name: 'hide' });
+  store.qcur = { boxId: b.id, qid: q.id, showAnswer: false, draw: uid() };
+  if (questionOn()) send('event', { name: 'hide' });
   rt.qFlash = true;
   commit();
   rt.qFlash = false;
+}
+function currentQuestion() {
+  const c = store.qcur, b = c && store.qboxes.find(x => x.id === c.boxId), q = b && b.items.find(x => x.id === c.qid);
+  return q ? { b, q } : null;
+}
+const questionOn = () => !!store.stage && store.stage.kind === 'question';
+// Zeigt die aktuelle Zufallsfrage am Beamer, gibt es noch keine, wird zuerst eine gezogen
+function showQuestion() {
+  if (!currentQuestion()) drawQuestion();
+  if (!currentQuestion()) return;
+  store.stage = { kind: 'question' };
+  send('event', { name: 'hide' });
+  commit();
 }
 function drawQuestion(boxId) {
   const b = store.qboxes.find(x => x.id === (boxId || store.activeBoxId));
@@ -2770,7 +2827,7 @@ function drawQuestion(boxId) {
     pool = b.items.filter(q => !b.drawn.includes(q.id));
     if (!pool.length) { b.drawn = []; pool = b.items; toast('Alle Fragen waren dran. Die Box ist wieder voll.'); }
   }
-  const last = store.stage && store.stage.kind === 'question' ? store.stage.qid : null;
+  const last = store.qcur ? store.qcur.qid : null;
   if (pool.length > 1) pool = pool.filter(q => q.id !== last);
   setQuestion(b, pool[randInt(pool.length)]);
 }
@@ -2791,6 +2848,10 @@ const DEMO_QUESTIONS = [
   'Wofür steht die Abkürzung DSGVO? | Datenschutz-Grundverordnung',
 ].join('\n');
 
+// Kleiner Hinweis, ob etwas gerade am Beamer zu sehen ist, mit Sprung in den Bereich Beamer
+function beamerLink(on, label) {
+  return `<button class="btn ghost small bm-link ${on ? 'on' : ''}" data-action="nav" data-page="beamer" title="Was am Beamer erscheint, legst du im Bereich Beamer fest">${icon('screen')}${label || (on ? 'Am Beamer sichtbar' : 'Nicht am Beamer')}</button>`;
+}
 function focusBtn(target) {
   const on = store.focus === target;
   return `<button class="btn small focus-btn" data-action="focus" data-val="${target}" aria-pressed="${on}" title="${on ? 'Fokus beenden' : 'Am Beamer groß in den Vordergrund holen'}">${icon('focus')}${on ? 'Im Fokus' : 'Fokus'}</button>`;
@@ -2867,7 +2928,8 @@ function setStrategy(x, item) {
 }
 function drawStrategy(kind = 'checkin', secId) {
   const st = store.strats, b = boardOf(kind);
-  const x = b && (secId ? b.sections.find(s => s.id === secId) : b.sections.find(s => s.type === 'strategy'));
+  let x = b && (secId ? b.sections.find(s => s.id === secId) : b.sections.find(s => s.type === 'strategy'));
+  if (!x && !secId && kind === 'checkin' && st.items.length) x = ensureStratSection();
   if (!x) return;
   if (!st.items.length) { toast('Die Bibliothek ist leer. Lege zuerst eine Strategie an.'); return; }
   let pool = st.items;
@@ -3261,14 +3323,14 @@ function pickPanel(c, span, big = false) {
     <div class="pick-result ${last ? '' : 'empty'} ${rt.pickFlash ? 'pop' : ''}">${last ? esc(fullName(last)) : 'Noch niemand gezogen.'}</div>
     <div class="row">
       <button class="btn primary lg" data-action="pick" ${pool.length ? '' : 'disabled'}>${icon('dice')}Name ziehen <kbd>Z</kbd></button>
-      <button class="btn ghost" data-action="beamer-hide">Am Beamer ausblenden</button>
+      ${store.beamer.picks ? '' : beamerLink(false, 'Namen nicht am Beamer')}
     </div>
   </section>`;
 }
 function timerPanel(span, big = false) {
   const t = store.timer;
   return `<section class="panel ${span} timer ${big ? 'big' : ''}">
-    <div class="panel-head"><h2>Timer</h2><div class="row">${t.label ? `<span class="muted small">${esc(t.label)}</span>` : ''}${focusBtn('timer')}</div></div>
+    <div class="panel-head"><h2>Timer</h2><div class="row">${t.label ? `<span class="muted small">${esc(t.label)}</span>` : ''}${store.beamer.timer ? '' : beamerLink(false)}</div></div>
     <div class="timer-display" data-live="timer-display">${fmtDur(timerRemaining(t))}</div>
     <div class="bar"><span data-live="timer-bar"></span></div>
     <div class="row chips">${[1, 2, 3, 5, 10, 15, 20, 30].map(m => `<button class="chip" data-action="timer-set" data-sec="${m * 60}" aria-pressed="${t.durationSec === m * 60}">${m} Min.</button>`).join('')}</div>
@@ -3338,12 +3400,105 @@ function emptyState() {
   </div>`;
 }
 
+
+/* ---------- Beamer: alles, was am Beamer erscheint, an einer Stelle ---------- */
+function beamerInfoPanel(span) {
+  const d = stageDesc(), bm = store.beamer, c = activeClass();
+  const what = !d ? (store.timer.state !== 'idle' && bm.timer ? 'Timer' : 'Uhr')
+    : d.kind === 'board' ? boardOf(d.board).title : d.kind === 'market' ? store.market.title : d.kind === 'question' ? 'Zufallsfrage' : d.name;
+  const on = [bm.timer && 'Timer', bm.ampel && rt.noise.source !== 'off' && 'Ampel', bm.stars && c && 'Sterne', bm.message && store.message.trim() && 'Hinweis', c && c.vocab.show && c.vocab.items.length && 'Vokabeln', bm.picks && 'Namen'].filter(Boolean);
+  return `<section class="panel ${span} bm-info">
+    <div class="panel-head"><h2>Am Beamer</h2><button class="btn primary" data-action="nav" data-page="beamer">${icon('screen')}Beamer steuern</button></div>
+    <div class="stage-title">${icon(d ? (d.kind === 'board' ? d.board : d.kind === 'market' ? 'market' : d.kind === 'question' ? 'question' : catIcon(d.cat)) : 'timer')}<strong>${esc(what)}</strong><span class="muted small">auf der Hauptfläche${store.focus ? ', Fokus an' : ''}</span></div>
+    <p class="muted small">Eingeblendet: ${on.length ? on.join(', ') : 'nichts weiter'}. Karten: ${cardBeamerText()}.</p>
+  </section>`;
+}
+function bmToggle(key, label, hint, on, extra = '') {
+  return `<div class="bm-toggle ${on ? 'on' : ''}">
+    <label class="check"><input type="checkbox" data-change="bm-flag" data-key="${key}" ${on ? 'checked' : ''}><span><strong>${label}</strong><span class="muted small">${hint}</span></span></label>${extra}
+  </div>`;
+}
+function pageBeamer(c) {
+  const st = store.settings, bm = store.beamer, s = store.stage;
+  const cur = s ? (s.kind === 'board' ? s.board : s.kind === 'media' ? 'media:' + s.id : s.kind) : 'none';
+  const bq = store.qboxes.some(b => b.items.length), mk = store.market.sessions.length;
+  const tile = (id, ic, label, sub, action, attrs = '', disabled = false) => `<button class="src-tile" data-action="${action}" ${attrs} aria-pressed="${cur === id}" ${disabled ? 'disabled' : ''}>${icon(ic)}<strong>${label}</strong><span class="muted small">${sub}</span></button>`;
+  const media = [...store.media].sort((a, b) => (b.used || b.t) - (a.used || a.t));
+  const avail = { stage: !!stageDesc(), timer: bm.timer, clock: true, ampel: bm.ampel && rt.noise.source !== 'off', stars: bm.stars && !!c, message: bm.message && !!store.message.trim(), vocab: !!(c && c.vocab.show && c.vocab.items.length) };
+  const liga = ligaRows();
+  return `
+  <div class="page-head"><div><h1>Beamer</h1><p class="lead">Hier legst du fest, was am Beamer zu sehen ist: was groß auf der Hauptfläche läuft, was zusätzlich eingeblendet wird und was im Fokus steht. In allen anderen Bereichen bereitest du Inhalte nur vor.</p></div>
+    <div class="row"><div class="status" data-live="beamer-status"></div><button class="btn primary lg" data-action="open-beamer" data-live="beamer-btn">${icon('screen')}<span> Beamer-Fenster öffnen</span></button></div>
+  </div>
+  <div class="grid">
+    <section class="panel s7">
+      <div class="panel-head"><h2>Hauptfläche</h2>${s ? '<button class="btn small" data-action="stage-hide">Ausblenden</button>' : ''}</div>
+      <div class="src-grid">
+        ${tile('none', 'timer', 'Nur Uhr und Timer', 'Nichts auf der Hauptfläche', 'stage-hide')}
+        ${tile('checkin', 'checkin', esc(boardOf('checkin').title), boardStats(boardOf('checkin')), 'board-show', 'data-kind="checkin"')}
+        ${tile('checkout', 'checkout', esc(boardOf('checkout').title), boardStats(boardOf('checkout')), 'board-show', 'data-kind="checkout"')}
+        ${tile('market', 'market', 'Sessionmarkt', mk ? `${mk} ${mk === 1 ? 'Session' : 'Sessions'}` : 'Noch keine Sessions', 'mk-show', '', !mk)}
+        ${tile('question', 'question', 'Zufallsfrage', currentQuestion() ? 'Aktuelle Frage zeigen' : bq ? 'Zieht eine Frage' : 'Noch keine Fragen', 'q-stage', '', !bq)}
+        ${tile('screen', 'share', 'Fenster teilen', 'Tab oder Fenster live', 'screen-share')}
+      </div>
+      <h3 class="bm-sub">Aus den Medien</h3>
+      ${media.length ? `<div class="row recent">${media.map(m => `<button class="chip" data-action="media-show" data-id="${m.id}" aria-pressed="${cur === 'media:' + m.id}" title="${esc(m.name)}">${icon(catIcon(m.cat))}<span>${esc(m.name)}</span></button>`).join('')}</div>`
+        : '<p class="muted small">Noch keine Medien. Webseiten, Dateien und Texte legst du unter Medien an.</p>'}
+      <div class="row" style="margin-top:10px"><button class="btn ghost small" data-action="nav" data-page="medien">${icon('media')}Medien verwalten</button></div>
+    </section>
+    <section class="panel s5">
+      <div class="panel-head"><h2>Einblendungen</h2></div>
+      <div class="bm-toggles">
+        ${bmToggle('timer', 'Timer', 'Läuft ein Timer, erscheint er groß. Aus: Am Beamer steht nur die Uhr.', bm.timer)}
+        ${bmToggle('ampel', 'Ampel', rt.noise.source === 'off' ? 'Die Ampel ist unter Lautstärke gerade aus.' : 'Lautstärke-Ampel am Rand.', bm.ampel,
+          bm.ampel ? `<label class="check small sub"><input type="checkbox" data-change="noise-showlevel" ${st.noise.showLevel ? 'checked' : ''}><span>Pegelbalken daneben</span></label>` : '')}
+        ${bmToggle('stars', 'Sterne und Klassenziel', c ? 'Leiste unten mit Sternen, Ziel und Liga-Platz.' : 'Erscheint, sobald eine Klasse gewählt ist.', bm.stars)}
+        ${c ? bmToggle('vocab', 'Vokabeln', `Liste links für ${esc(c.name)}${c.vocab.items.length ? '' : ', noch leer'}.`, c.vocab.show) : ''}
+        ${bmToggle('picks', 'Namen aus dem Zufall', 'Auslosung und Aufrufen erscheinen groß.', bm.picks)}
+        ${bmToggle('message', 'Hinweis unter der Uhr', 'Zum Beispiel die aktuelle Aufgabe.', bm.message, `<div class="row nowrap sub">
+          <input type="text" value="${esc(store.message)}" data-input="message" placeholder="z. B. Buch S. 34, Nr. 2 a bis c" aria-label="Hinweis am Beamer">
+          <button class="btn ghost small" data-action="message-clear">Leeren</button></div>`)}
+        <div class="bm-toggle"><p class="small" style="margin:0 0 6px"><strong>Karten</strong> <span class="muted">Ausgeschaltete Farben werden nur im Dashboard notiert.</span></p>${cardBeamerRow()}</div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" data-action="liga-show" ${liga.length > 1 ? '' : 'disabled'} title="${liga.length > 1 ? 'Zeigt die Klassen-Liga kurz groß' : 'Die Liga braucht mindestens zwei Klassen'}">${icon('star')}Klassen-Liga einblenden</button>
+        <button class="btn ghost" data-action="beamer-hide" title="Schließt eine laufende Einblendung wie Name, Karte oder Liga">Einblendung schließen</button>
+      </div>
+    </section>
+    ${stagePanel('s7')}
+    <section class="panel s5">
+      <div class="panel-head"><h2>Fokus</h2></div>
+      <p class="muted small" style="margin-top:-4px">Holt einen Bereich groß nach vorn, alles andere rückt in den Hintergrund. Esc beendet den Fokus.</p>
+      <div class="row chips">
+        <button class="chip" data-action="focus-set" data-val="" aria-pressed="${!store.focus}">Kein Fokus</button>
+        ${FOCUS_TARGETS.map(([k, l]) => `<button class="chip" data-action="focus-set" data-val="${k}" aria-pressed="${store.focus === k}" ${avail[k] ? '' : 'disabled'}>${k === 'stage' ? 'Hauptfläche' : l}</button>`).join('')}
+      </div>
+    </section>
+    <section class="panel s6">
+      <div class="panel-head"><h2>Darstellung</h2></div>
+      <div class="setting"><span>Anzeige</span>${seg('set', [['board', 'Dunkel'], ['paper', 'Hell']], st.beamerTheme, 'data-key="beamerTheme"')}
+        <span class="muted small">In einem hellen Raum ist die helle Anzeige oft besser lesbar.</span></div>
+      <div class="setting"><span>Namen</span>${seg('set', [['auto', 'Automatisch'], ['first', 'Nur Vorname'], ['full', 'Vor- und Nachname']], st.nameMode, 'data-key="nameMode"')}
+        <span class="muted small">Automatisch zeigt den Vornamen und hängt den ersten Buchstaben des Nachnamens an, wenn ein Vorname doppelt vorkommt.</span></div>
+    </section>
+    <section class="panel s6">
+      <div class="panel-head"><h2>So richtest du den Beamer ein</h2></div>
+      <ol class="guide">
+        <li>Klicke oben auf „Beamer-Fenster öffnen“. Es öffnet sich ein zweites Fenster.</li>
+        <li>Zieh dieses Fenster auf den Beamer-Bildschirm und drücke dort die Taste F für Vollbild.</li>
+        <li>Auf dieser Seite legst du fest, was am Beamer erscheint. Die Anzeige folgt sofort.</li>
+      </ol>
+      <p class="muted small" style="margin-top:12px">Spiegelt dein Laptop nur den Bildschirm, zeig einfach das Beamer-Fenster im Vollbild. Dort startet und pausiert die Leertaste den Timer, Z zieht einen Namen und Esc schließt eine Einblendung. Im Dashboard gilt dasselbe, dazu springt V in die Vokabel-Eingabe. Q zieht eine Zufallsfrage, die Pfeiltasten (auch ein Presenter) blättern in PDFs und zur nächsten Frage, Esc beendet den Fokus. Für die Mikrofon-Ampel öffne die Datei am besten in Chrome.</p>
+    </section>
+  </div>`;
+}
+
 /* ---------- Seiten ---------- */
 function vocabPanel(c, span, full = false) {
   const v = c.vocab, toForeign = store.settings.vocabDir === 'de2x', lang = esc(langName(v.lang));
   return `<section class="panel ${span} vocab">
     <div class="panel-head"><h2>Vokabeln</h2>
-      <div class="row"><label class="check small"><input type="checkbox" data-change="vocab-show" ${v.show ? 'checked' : ''}><span>Links am Beamer zeigen</span></label>${v.show && v.items.length ? focusBtn('vocab') : ''}</div>
+      <div class="row">${beamerLink(v.show && v.items.length > 0, v.show ? (v.items.length ? 'Am Beamer sichtbar' : 'Am Beamer an') : 'Nicht am Beamer')}</div>
     </div>
     <form class="vocab-form" data-submit="vocab-add">
       <button type="button" class="btn vocab-dir" data-action="vocab-dir" title="Eingaberichtung wechseln">${toForeign ? 'Deutsch' : lang}${icon('swap')}${toForeign ? lang : 'Deutsch'}</button>
@@ -3403,30 +3558,22 @@ function pageUnterricht(c) {
     ${timerPanel('s7')}
     <section class="panel s12 as-panel">
       <div class="as-ampel">
-        <div class="panel-head"><h2>Ampel</h2><div class="row">${sourceSeg()}${rt.noise.source !== 'off' ? focusBtn('ampel') : ''}</div></div>
+        <div class="panel-head"><h2>Ampel</h2><div class="row">${sourceSeg()}</div></div>
         <div class="as-row">${miniAmpel()}<div class="as-meter">${meterHTML()}${micWarnHTML()}<p class="muted small">${noiseHint()}</p></div></div>
       </div>
       <div class="as-stars">
-        <div class="panel-head"><h2>Sterne für ${esc(c.name)}</h2><div class="row"><button class="btn ghost" data-action="nav" data-page="sterne">Regeln und Ziel</button>${focusBtn('stars')}</div></div>
+        <div class="panel-head"><h2>Sterne für ${esc(c.name)}</h2><div class="row"><button class="btn ghost" data-action="nav" data-page="sterne">Regeln und Ziel</button></div></div>
         ${starsBlock(c)}
       </div>
     </section>
     <section class="panel s12">
-      <div class="panel-head"><h2>SuS</h2>${cardBeamerRow()}</div>
+      <div class="panel-head"><h2>SuS</h2>${beamerLink(false, 'Karten am Beamer: ' + cardBeamerText())}</div>
       <p class="muted small" style="margin:-6px 0 12px">Karte antippen vergibt Lob, Gelb oder Rot. Auf den Namen tippen für Notizen und Anwesenheit.</p>
       ${c.students.length ? `<div class="sus-grid">${chips}</div>` : `<div class="row"><span class="muted">In dieser Klasse sind noch keine SuS.</span><button class="btn" data-action="nav" data-page="klassen">Namen hinzufügen</button></div>`}
     </section>
     ${questionPanel('s5')}
-    ${stagePanel('s7')}
-    ${vocabPanel(c, 's7')}
-    <section class="panel s5">
-      <div class="panel-head"><h2>Hinweis am Beamer</h2>${store.message.trim() ? focusBtn('message') : ''}</div>
-      <p class="muted small">Steht unter der Uhr, zum Beispiel die aktuelle Aufgabe.</p>
-      <div class="row nowrap">
-        <input type="text" value="${esc(store.message)}" data-input="message" placeholder="z. B. Buch S. 34, Nr. 2 a bis c" aria-label="Hinweis am Beamer">
-        <button class="btn ghost" data-action="message-clear">Leeren</button>
-      </div>
-    </section>
+    ${beamerInfoPanel('s7')}
+    ${vocabPanel(c, 's12')}
   </div>`;
 }
 
@@ -3513,7 +3660,7 @@ function pageLaut() {
         <li>Zeigt die Ampel ständig Rot, senke die Empfindlichkeit oder miss den Grundpegel neu.</li>
         <li>Ohne Mikrofon kannst du die Ampel im Modus Manuell selbst schalten. Die Sterne zählen trotzdem.</li>
       </ul>
-      <label class="check"><input type="checkbox" data-change="noise-showlevel" ${s.showLevel ? 'checked' : ''}><span>Pegelbalken neben der Ampel am Beamer zeigen</span></label>
+      <p class="muted small">Ob Ampel und Pegelbalken am Beamer erscheinen, legst du unter Beamer fest.</p>
     </section>
     <section class="panel s12">
       <details class="diag" data-diag ${rt.diagOpen ? 'open' : ''}><summary>Mikrofon-Diagnose</summary>
@@ -3532,7 +3679,7 @@ function pageKarten(c) {
   const cell = v => v ? v : '<span class="zero">0</span>';
   return `
   <div class="page-head">
-    <div><h1>Karten</h1><p class="lead">Lob, gelbe und rote Karten mit Notizen für ${esc(c.name)}. Notizen erscheinen nie am Beamer. Für jede Farbe stellst du ein, ob sie am Beamer erscheint.</p>${cardBeamerRow()}</div>
+    <div><h1>Karten</h1><p class="lead">Lob, gelbe und rote Karten mit Notizen für ${esc(c.name)}. Notizen erscheinen nie am Beamer. Welche Farben am Beamer erscheinen, legst du unter Beamer fest.</p>${beamerLink(false, 'Am Beamer: ' + cardBeamerText())}</div>
     <div class="row">${seg('card-range', [['today', 'Heute'], ['week', 'Diese Woche'], ['all', 'Alle']], range)}<button class="btn" data-action="cards-export" ${log.length ? '' : 'disabled'}>Als CSV exportieren</button></div>
   </div>
   <div class="grid">
@@ -3590,7 +3737,7 @@ function pageSterne(c) {
       <p class="muted small">Rot zählt nur, wenn es länger laut bleibt. Die Geduld stellst du unter Lautstärke ein.</p>
     </section>
     <section class="panel s5">
-      <div class="panel-head"><h2>Klassen-Liga</h2><button class="btn" data-action="liga-show" ${liga.length > 1 ? '' : 'disabled'}>Am Beamer zeigen</button></div>
+      <div class="panel-head"><h2>Klassen-Liga</h2>${liga.length > 1 ? beamerLink(false, 'Einblenden unter Beamer') : ''}</div>
       ${liga.length > 1 ? `
         ${seg('set', [['stars', 'Sterne'], ['rate', 'Pro 45 Minuten']], st.ligaMode, 'data-key="ligaMode"')}
         <table class="tbl" style="margin-top:12px"><thead><tr><th>Platz</th><th>Klasse</th><th class="num">Sterne</th><th class="num">je 45 Min.</th></tr></thead>
@@ -3689,8 +3836,7 @@ function pageKlassen() {
 
 /* ---------- Zufallsfragen und Bühne: Panels ---------- */
 function questionPanel(span, big = false) {
-  const b = activeBox(), s = store.stage && store.stage.kind === 'question' ? store.stage : null;
-  const cur = s && store.qboxes.find(x => x.id === s.boxId), q = cur && cur.items.find(x => x.id === s.qid);
+  const b = activeBox(), cq = currentQuestion(), q = cq && cq.q, on = questionOn();
   const left = b && b.noRepeat && b.items.length ? `<span class="muted small">${b.items.length - b.drawn.length} von ${b.items.length} offen</span>` : '';
   let body;
   if (!store.qboxes.length) {
@@ -3701,15 +3847,14 @@ function questionPanel(span, big = false) {
       ? `<label class="field q-pick"><span>Fragenbox</span><select class="input" data-change="q-box-select">${store.qboxes.map(x => `<option value="${x.id}" ${x.id === store.activeBoxId ? 'selected' : ''}>${esc(x.name)} (${x.items.length})</option>`).join('')}</select></label>`
       : `<p class="muted small">Fragenbox: <strong>${esc(b.name)}</strong></p>`}
       <div class="q-current ${big ? 'big' : ''} ${q ? '' : 'empty'} ${rt.qFlash ? 'pop' : ''}">${q ? esc(q.q) : 'Noch keine Frage gezogen.'}</div>
-      ${q && q.a ? `<div class="q-ans"><span>Antwort${s.showAnswer ? ', am Beamer sichtbar' : ', nur für dich'}</span>${esc(q.a)}</div>` : ''}
+      ${q && q.a ? `<div class="q-ans"><span>Antwort${on && store.qcur.showAnswer ? ', am Beamer sichtbar' : ', nur für dich'}</span>${esc(q.a)}</div>` : ''}
       <div class="row">
         <button class="btn primary ${big ? 'lg' : ''}" data-action="q-draw" ${b && b.items.length ? '' : 'disabled'}>${icon('question')}Frage ziehen <kbd>Q</kbd></button>
-        ${q && q.a ? `<button class="btn" data-action="q-answer">${s.showAnswer ? 'Antwort verbergen' : 'Antwort am Beamer zeigen'}</button>` : ''}
-        ${s ? '<button class="btn ghost" data-action="stage-hide">Am Beamer ausblenden</button>' : ''}
+        ${beamerLink(on)}
       </div>`;
   }
   return `<section class="panel ${span} qpanel">
-    <div class="panel-head"><h2>Zufallsfrage</h2><div class="row">${left}${s ? focusBtn('stage') : ''}</div></div>
+    <div class="panel-head"><h2>Zufallsfrage</h2><div class="row">${left}</div></div>
     ${body}
   </section>`;
 }
@@ -3758,20 +3903,10 @@ const recentMedia = n => [...store.media].sort((a, b) => (b.used || b.t) - (a.us
 
 function stagePanel(span) {
   const s = store.stage, d = stageDesc();
-  const head = `<div class="panel-head"><h2>Bühne am Beamer</h2><div class="row">${d ? focusBtn('stage') + '<button class="btn ghost small" data-action="stage-hide">Ausblenden</button>' : ''}</div></div>`;
+  const head = `<div class="panel-head"><h2>Gerade auf der Hauptfläche</h2><div class="row">${d ? focusBtn('stage') + '<button class="btn small" data-action="stage-hide">Ausblenden</button>' : ''}</div></div>`;
   if (!d) {
-    const recent = recentMedia(6), b = activeBox();
     return `<section class="panel ${span} stage-panel">${head}
-      <p class="muted">Am Beamer läuft gerade ${store.timer.state === 'idle' ? 'die Uhr' : 'der Timer'}. Hol eine Datei, eine Webseite oder eine Zufallsfrage auf die Bühne.</p>
-      ${recent.length ? `<div class="row recent">${recent.map(m => `<button class="chip" data-action="media-show" data-id="${m.id}" title="${esc(m.name)}">${icon(catIcon(m.cat))}<span>${esc(m.name)}</span></button>`).join('')}</div>` : ''}
-      <div class="row" style="margin-top:14px">
-        <button class="btn" data-action="nav" data-page="medien">${icon('media')}Medien</button>
-        <button class="btn" data-action="screen-share">${icon('share')}Fenster teilen</button>
-        <button class="btn" data-action="q-draw" ${b && b.items.length ? '' : 'disabled'}>${icon('question')}Zufallsfrage</button>
-        <button class="btn" data-action="board-show" data-kind="checkin">${icon('checkin')}Check-in</button>
-        <button class="btn" data-action="board-show" data-kind="checkout">${icon('checkout')}Check-out</button>
-        ${store.market.sessions.length ? `<button class="btn" data-action="mk-show">${icon('market')}Sessionmarkt</button>` : ''}
-      </div>
+      <p class="muted">Am Beamer läuft gerade ${store.timer.state !== 'idle' && store.beamer.timer ? 'der Timer' : 'die Uhr'}. Wähle links aus, was groß auf der Hauptfläche erscheinen soll. Hier steuerst du es dann: blättern, zoomen, Ansicht wechseln, Antwort aufdecken.</p>
     </section>`;
   }
   if (d.kind === 'board' || d.kind === 'market') {
@@ -3780,7 +3915,11 @@ function stagePanel(span) {
       : [['all', 'Alles'], ...obj.sections.filter(x => x.on && (secShown(x))).map(x => [x.id, esc(secLabel(x))])];
     return `<section class="panel ${span} stage-panel">${head}
       <div class="stage-title">${icon(isM ? 'market' : d.board)}<strong>${esc(obj.title)}</strong><span class="muted small">${isM ? sum(obj.sessions.map(x => x.people.length)) + ' angemeldet' : boardStats(obj)}</span></div>
-      ${views.length > 1 ? `<div class="setting"><span>Ansicht am Beamer</span>${isM ? seg('mk-view', views, obj.view) : seg('bd-view', views, obj.view, `data-kind="${d.board}"`)}</div>` : ''}
+      ${views.length > 1 ? `<div class="setting"><span>Ansicht am Beamer</span>${isM ? seg('mk-view', views, obj.view) : seg('bd-view', views, obj.view, `data-kind="${d.board}"`)}
+        <span class="muted small">„${isM ? 'Alle Runden' : 'Alles'}“ zeigt die Übersicht, ein einzelner Bereich erscheint bildschirmfüllend. Die Pfeiltasten und ein Presenter blättern weiter.</span></div>` : ''}
+      ${isM ? '' : obj.sections.filter(x => x.on && x.type === 'scale').map(x => `<div class="setting"><span>${esc(secLabel(x))}</span>
+        <button class="btn small ${x.hide ? 'primary' : ''}" data-action="bd-hide-toggle" data-kind="${d.board}" data-sec="${x.id}">${icon(x.hide ? 'eye' : 'eyeoff')}${x.hide ? 'Ergebnis aufdecken' : 'Ergebnis verdecken'}</button>
+        <span class="muted small">${x.hide ? 'Die SuS sehen nur, wie viele abgestimmt haben.' : 'Das Ergebnis ist am Beamer zu sehen.'}</span></div>`).join('')}
       <div class="row"><button class="btn" data-action="nav" data-page="${isM ? 'markt' : d.board}">Bearbeiten und Ergebnisse</button></div>
     </section>`;
   }
@@ -3806,7 +3945,7 @@ function mediaRow(m) {
     <div class="media-main"><input type="text" class="media-name" value="${esc(m.name)}" data-change="media-rename" data-id="${m.id}" aria-label="Name"><span class="muted small">${esc(meta)}</span>${m.kind === 'note' ? `<details class="note-edit"><summary>Text bearbeiten</summary><textarea rows="4" data-change="note-edit" data-id="${m.id}" aria-label="Text">${esc(m.text)}</textarea></details>` : ''}</div>
     <div class="row nowrap">
       ${m.kind === 'web' ? `<button class="btn ghost small" data-action="web-window" data-id="${m.id}" title="In eigenem Fenster öffnen">Fenster</button>` : ''}
-      ${on ? '<button class="btn small" data-action="stage-hide">Ausblenden</button>' : `<button class="btn primary small" data-action="media-show" data-id="${m.id}">Zeigen</button>`}
+      ${on ? beamerLink(true) : ''}
       <button class="btn ghost small danger" data-action="media-del" data-id="${m.id}" aria-label="${esc(m.name)} löschen">Löschen</button>
     </div>
   </li>`;
@@ -3815,30 +3954,28 @@ function mediaRow(m) {
 function pageMedien() {
   const items = [...store.media].sort((a, b) => b.t - a.t);
   return `
-  <div class="page-head"><div><h1>Medien</h1><p class="lead">Zeige Webseiten, PDFs, Bilder, Word-Dateien, Videos oder einfach einen Text groß am Beamer. Blättern, zoomen und ausblenden steuerst du von hier aus.</p></div></div>
+  <div class="page-head"><div><h1>Medien</h1><p class="lead">Sammle Webseiten, PDFs, Bilder, Word-Dateien, Videos und Texte in deiner Bibliothek. Zeigen, blättern, zoomen und ausblenden steuerst du unter Beamer.</p></div></div>
   <div class="grid">
-    ${stagePanel('s7')}
     <section class="panel s5">
       <div class="panel-head"><h2>Hinzufügen</h2></div>
       <form class="stack" data-submit="web-add">
         <label class="field"><span>Webseite oder Video-Link</span><input type="text" name="url" placeholder="https://… oder YouTube-Link" inputmode="url" autocomplete="off" spellcheck="false" required></label>
         <label class="field"><span>Titel (optional)</span><input type="text" name="title" placeholder="z. B. Erklärvideo Subnetting"></label>
-        <div><button class="btn primary">${icon('globe')}Am Beamer zeigen</button></div>
+        <div><button class="btn primary">${icon('globe')}Zur Bibliothek hinzufügen</button></div>
       </form>
       <form class="stack" data-submit="note-add" style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border)">
-        <label class="field"><span>Text zeigen</span><textarea name="text" rows="4" required placeholder="Zum Beispiel ein Arbeitsauftrag, ein Zitat oder eine Leitfrage"></textarea></label>
+        <label class="field"><span>Text</span><textarea name="text" rows="4" required placeholder="Zum Beispiel ein Arbeitsauftrag, ein Zitat oder eine Leitfrage"></textarea></label>
         <label class="field"><span>Überschrift (optional)</span><input type="text" name="title" placeholder="z. B. Arbeitsauftrag"></label>
-        <div><button class="btn primary">${icon('note')}Text am Beamer zeigen</button></div>
+        <div><button class="btn primary">${icon('note')}Text speichern</button></div>
       </form>
       <label class="drop" data-drop="media" style="margin-top:18px">
         <input type="file" multiple accept=".pdf,.docx,.txt,.md,.csv,.html,.htm,image/*,video/*,audio/*" data-change="media-files" hidden>
         <strong>Dateien hierher ziehen</strong>
         <span class="muted">oder klicken: PDF, Bild, Word (.docx), Video, Audio, Text</span>
       </label>
-      <div class="row" style="margin-top:14px"><button class="btn" data-action="screen-share">${icon('share')}Fenster oder Tab teilen</button></div>
       <p class="muted small" style="margin-top:12px">Dateien bleiben in diesem Browser auf deinem Gerät. PowerPoint und Excel speicherst du vorher als PDF. Die Anzeigeprogramme für PDF und Word sind eingebaut, es wird nichts aus dem Netz geladen.</p>
     </section>
-    <section class="panel s12">
+    <section class="panel s7">
       <div class="panel-head"><h2>Bibliothek</h2><span class="muted small">${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'}</span></div>
       ${items.length ? `<ul class="media-list">${items.map(mediaRow).join('')}</ul>` : '<p class="muted">Noch nichts gespeichert. Füge oben eine Webseite oder Datei hinzu.</p>'}
     </section>
@@ -3848,7 +3985,7 @@ function pageMedien() {
 function pageFragen() {
   const b = activeBox();
   return `
-  <div class="page-head"><div><h1>Zufallsfragen</h1><p class="lead">Sammle Fragen in Fragenboxen, zum Beispiel zur Wiederholung oder als Einstieg. Per Knopfdruck erscheint eine Zufallsfrage groß am Beamer. Die Antwort zeigst du erst, wenn du willst.</p></div></div>
+  <div class="page-head"><div><h1>Zufallsfragen</h1><p class="lead">Sammle Fragen in Fragenboxen, zum Beispiel zur Wiederholung oder als Einstieg. Per Knopfdruck ziehst du eine Zufallsfrage. Ob sie und ihre Antwort am Beamer erscheinen, legst du unter Beamer fest. Die Antwort zeigst du erst, wenn du willst.</p></div></div>
   <div class="grid">
     ${questionPanel('s7', true)}
     <section class="panel s5">
@@ -3872,7 +4009,7 @@ function pageFragen() {
             <span class="q-num" title="${b.noRepeat && b.drawn.includes(q.id) ? 'Schon gezogen' : ''}">${i + 1}</span>
             <input type="text" value="${esc(q.q)}" data-change="q-edit" data-field="q" data-id="${q.id}" aria-label="Frage ${i + 1}">
             <input type="text" class="q-a" value="${esc(q.a)}" data-change="q-edit" data-field="a" data-id="${q.id}" placeholder="Antwort (optional)" aria-label="Antwort zu Frage ${i + 1}">
-            <button class="btn ghost small" data-action="q-show" data-id="${q.id}" title="Genau diese Frage am Beamer zeigen" aria-label="Frage ${i + 1} am Beamer zeigen">${icon('screen')}</button>
+            <button class="btn ghost small" data-action="q-show" data-id="${q.id}" title="Genau diese Frage als aktuelle Frage wählen" aria-label="Frage ${i + 1} als aktuelle Frage wählen">${icon('check')}</button>
             <button class="btn ghost small" data-action="q-del" data-id="${q.id}" aria-label="Frage ${i + 1} löschen">×</button>
           </li>`).join('')}</ol>` : '<p class="muted">Noch keine Fragen. Füge rechts deine Fragen ein.</p>'}
         </div>
@@ -3894,9 +4031,26 @@ function pageFragen() {
 }
 
 /* ---------- Check-in, Check-out und Sessionmarkt: Seiten ---------- */
+const SEC_TYPES = { scale: 'Skala', wall: 'Kartenwand', list: 'Liste', qr: 'QR-Code', strategy: 'Lernstrategie' };
+const WALL_COLORS = [['yellow', 'Gelb'], ['blue', 'Blau'], ['white', 'Weiß'], ['rose', 'Rosé']];
+function newSection(type) {
+  if (type === 'scale') return boardSec('scale', { q: 'Neue Frage', low: 'trifft nicht zu', high: 'trifft voll zu', votes: [0, 0, 0, 0, 0], hide: false });
+  if (type === 'wall') return boardSec('wall', { q: 'Neue Kartenwand', hint: '', color: 'yellow', cards: [] });
+  if (type === 'list') return boardSec('list', { q: 'Neue Liste', checks: false, items: [] });
+  if (type === 'strategy') return boardSec('strategy', { q: 'Lernstrategie des Tages', sid: null });
+  return boardSec('qr', { q: 'QR-Code', text: '', url: '' });
+}
+// Für die Lernstrategie des Tages: Fehlt im Check-in der Bereich, kommt er an zweiter Stelle dazu
+function ensureStratSection() {
+  const b = boardOf('checkin');
+  if (!b) return null;
+  let x = b.sections.find(s => s.type === 'strategy');
+  if (!x) { x = newSection('strategy'); b.sections.splice(Math.min(1, b.sections.length), 0, x); }
+  return x;
+}
 const BOARD_LEAD = {
-  checkin: 'Starte gemeinsam in die Stunde: Stimmung abfragen, die Lernstrategie des Tages vorstellen, Erwartungen sammeln und den Plan für heute zeigen. An einem Touch-Display tippen die SuS selbst, sonst trägst du ihre Antworten hier ein.',
-  checkout: 'Schließe die Stunde gemeinsam ab: Zufriedenheit, Lichtblicke, drei Reflexionsfragen, nächste Schritte und eine Abschlussumfrage per QR-Code.',
+  checkin: 'Starte gemeinsam in die Stunde: Stimmung abfragen, die Lernstrategie des Tages vorstellen, Erwartungen sammeln und den Plan für heute zeigen. Hier stellst du die Bereiche ein und fügst neue hinzu. Ob und wie der Check-in am Beamer erscheint, legst du unter Beamer fest.',
+  checkout: 'Schließe die Stunde gemeinsam ab: Zufriedenheit, Lichtblicke, drei Reflexionsfragen, nächste Schritte und eine Abschlussumfrage per QR-Code. Hier stellst du die Bereiche ein und fügst neue hinzu. Ob und wie der Check-out am Beamer erscheint, legst du unter Beamer fest.',
 };
 function boardDesc(kind) {
   const c = activeClass(), b = boardOf(kind);
@@ -3927,11 +4081,11 @@ function secEditor(x, kind) {
         <div class="row"><button class="btn small" data-action="bd-vote" data-v="${i + 1}" data-d="-1" ${dk} aria-label="Eine Stimme weniger bei ${i + 1}" ${v ? '' : 'disabled'}>−</button><button class="btn small" data-action="bd-vote" data-v="${i + 1}" data-d="1" ${dk} aria-label="Eine Stimme mehr bei ${i + 1}">+</button></div>
       </div>`).join('')}</div>
       <p class="vote-sum"><strong>${n ? 'Ø ' + fmtNum(Math.round(voteAvg(x.votes) * 10) / 10) : 'Noch keine Stimmen'}</strong>${n ? ` aus ${n} ${n === 1 ? 'Stimme' : 'Stimmen'}` : '. Zähle per Handzeichen und tippe auf +, oder lass die SuS am Touch-Display abstimmen.'}</p>
-      <div class="row"><label class="check small"><input type="checkbox" data-change="bd-sec-flag" data-field="hide" ${dk} ${x.hide ? 'checked' : ''}><span>Ergebnis am Beamer verdecken, bis ich es aufdecke</span></label>
-      ${n ? `<button class="btn ghost small danger" data-action="bd-votes-reset" ${dk}>Stimmen löschen</button>` : ''}</div>`;
+      ${n ? `<div class="row"><button class="btn ghost small danger" data-action="bd-votes-reset" ${dk}>Stimmen löschen</button></div>` : ''}`;
   } else if (x.type === 'wall') {
     const waiting = x.cards.filter(k => k.hidden).length;
     body = `${edit('q', 'Überschrift')}${edit('hint', 'Leitfrage für die SuS')}
+      <div class="setting" style="margin:12px 0 0"><span>Farbe der Karten</span>${seg('bd-sec-color', WALL_COLORS, x.color, dk)}</div>
       <form class="row nowrap" data-submit="bd-card-add" ${dk} style="margin-top:12px">
         <input type="text" name="text" maxlength="240" placeholder="Karte für die Wand schreiben" aria-label="Neue Karte">
         <button class="btn">Anheften</button>
@@ -3967,10 +4121,13 @@ function secEditor(x, kind) {
       <div class="qr-row"><div class="qr-prev" data-qr="${esc(x.url)}">${x.url ? '' : '<span>Noch kein Link</span>'}</div>
       <p class="muted small">Ohne Link bleibt dieser Bereich am Beamer ausgeblendet. Der QR-Code entsteht direkt im Browser, ohne Internetdienst.</p></div>`;
   }
-  return `<section class="panel s6 sec-ed ${x.on ? '' : 'sec-off'}">
-    <div class="panel-head"><h2>${esc(secLabel(x))}</h2><div class="row">
+  const b = boardOf(kind), i = b.sections.indexOf(x);
+  return `<section class="panel s6 sec-ed ${x.on ? '' : 'sec-off'}" data-sec-panel="${x.id}">
+    <div class="panel-head"><h2><span class="sec-type">${SEC_TYPES[x.type] || ''}</span>${esc(secLabel(x))}</h2><div class="row sec-tools">
       <label class="check small"><input type="checkbox" data-change="bd-sec-on" ${dk} ${x.on ? 'checked' : ''}><span>Aktiv</span></label>
-      ${x.on && (secShown(x)) ? `<button class="btn small" data-action="bd-view" data-val="${x.id}" data-show="1" data-kind="${kind}">${icon('focus')}Groß zeigen</button>` : ''}
+      <button class="btn ghost small icon-only" data-action="bd-sec-move" data-d="-1" ${dk} aria-label="Nach vorn" title="Nach vorn" ${i > 0 ? '' : 'disabled'}>${icon('up')}</button>
+      <button class="btn ghost small icon-only" data-action="bd-sec-move" data-d="1" ${dk} aria-label="Nach hinten" title="Nach hinten" ${i < b.sections.length - 1 ? '' : 'disabled'}>${icon('down')}</button>
+      <button class="btn ghost small danger" data-action="bd-sec-del" ${dk} aria-label="Bereich löschen">Löschen</button>
     </div></div>
     ${body}
   </section>`;
@@ -3978,17 +4135,15 @@ function secEditor(x, kind) {
 
 function pageBoard(kind) {
   const c = activeClass();
-  const b = boardOf(kind), on = boardOn(kind);
-  const views = [['all', 'Alles'], ...b.sections.filter(x => x.on && (secShown(x))).map(x => [x.id, esc(secLabel(x))])];
+  const b = boardOf(kind), on = boardOn(kind), hasStrat = b.sections.some(x => x.type === 'strategy');
   return `
   <div class="page-head"><div><h1>${esc(b.title)}</h1><p class="lead">${BOARD_LEAD[kind]}</p></div>
-    <div class="row">${on ? `${focusBtn('stage')}<button class="btn" data-action="stage-hide">Am Beamer ausblenden</button>` : `<button class="btn primary lg" data-action="board-show" data-kind="${kind}">${icon('screen')}Am Beamer zeigen</button>`}</div>
+    <div class="row">${beamerLink(on)}</div>
   </div>
   <div class="grid">
     <section class="panel s12">
       <div class="panel-head"><h2>${esc(b.title)} ${c ? 'für ' + esc(c.name) : 'ohne Klasse (allgemein, z. B. für Fortbildungen)'}</h2><span class="muted small">${boardStats(b)}</span></div>
-      <div class="setting"><span>Ansicht am Beamer</span>${seg('bd-view', views, b.view, `data-kind="${kind}"`)}
-        <span class="muted small">„Alles“ zeigt die Übersicht. Einzelne Bereiche erscheinen bildschirmfüllend. Mit den Pfeiltasten oder einem Presenter blätterst du durch.</span></div>
+      <label class="field" style="max-width:420px;margin-bottom:14px"><span>Titel am Beamer</span><input type="text" value="${esc(b.title)}" data-change="bd-title" data-kind="${kind}"></label>
       <div class="row">
         <label class="check"><input type="checkbox" data-change="bd-flag" data-kind="${kind}" data-field="input" ${b.input ? 'checked' : ''}><span>SuS tippen am Beamer selbst (Touch-Display oder interaktive Tafel)</span></label>
         <label class="check"><input type="checkbox" data-change="bd-flag" data-kind="${kind}" data-field="moderate" ${b.moderate ? 'checked' : ''}><span>Neue Karten erst nach meiner Freigabe zeigen</span></label>
@@ -3997,13 +4152,21 @@ function pageBoard(kind) {
         <button class="btn" data-action="bd-gopilot" data-kind="${kind}">${icon('screen')}GoPilot-QR</button>
         <span class="muted small">${gopilotBase() ? (kind === 'checkin' ? 'Ein QR-Code öffnet bei den SuS die Lernstrategie des Tages als Eintrag in ihrem GoPilot-Portfolio.' : 'Ein QR-Code öffnet bei den SuS einen Lerntagebuch-Eintrag mit diesen Fragen in ihrem GoPilot-Portfolio.') : 'Für den GoPilot-QR trägst du unter Einstellungen die Adresse eurer GoPilot-App ein.'}</span>
       </div>
+      <div class="add-sec">
+        <span class="add-sec-label">Bereich hinzufügen</span>
+        <button class="btn small" data-action="bd-sec-add" data-type="scale" data-kind="${kind}">+ Skala</button>
+        <button class="btn small" data-action="bd-sec-add" data-type="wall" data-kind="${kind}">+ Kartenwand</button>
+        <button class="btn small" data-action="bd-sec-add" data-type="list" data-kind="${kind}">+ Liste</button>
+        <button class="btn small" data-action="bd-sec-add" data-type="qr" data-kind="${kind}">+ QR-Code</button>
+        ${hasStrat ? '' : `<button class="btn small" data-action="bd-sec-add" data-type="strategy" data-kind="${kind}">+ Lernstrategie</button>`}
+      </div>
       <div class="row" style="margin-top:14px">
         <button class="btn" data-action="bd-export" data-kind="${kind}">Ergebnisse als Text speichern</button>
         <button class="btn danger" data-action="bd-reset" data-kind="${kind}">Neu starten</button>
         <span class="muted small">Neu starten löscht Stimmen und Karten, deine Fragen bleiben.</span>
       </div>
     </section>
-    ${b.sections.map(x => secEditor(x, kind)).join('')}
+    ${b.sections.length ? b.sections.map(x => secEditor(x, kind)).join('') : '<section class="panel s12"><p class="muted">Noch keine Bereiche. Füge oben eine Skala, eine Kartenwand, eine Liste, einen QR-Code oder eine Lernstrategie hinzu.</p></section>'}
   </div>`;
 }
 const pageCheckin = () => pageBoard('checkin');
@@ -4038,10 +4201,9 @@ function mkSessionEditor(s, m) {
 function pageMarkt() {
   const m = store.market, c = activeClass(), on = marketOn();
   const total = sum(m.sessions.map(s => s.people.length)), waiting = sum(m.sessions.map(s => s.wait.length));
-  const views = [['all', 'Alle Runden'], ...m.rounds.map(r => [r.id, esc(r.label)])];
   return `
   <div class="page-head"><div><h1>Sessionmarkt</h1><p class="lead">Für Projekttage, Stationenlernen oder Fortbildungen: Sessions in Runden anbieten, Plätze begrenzen, Anmeldungen sammeln. Ist eine Session voll, landen weitere Namen automatisch auf der Warteliste.</p></div>
-    <div class="row">${on ? `${focusBtn('stage')}<button class="btn" data-action="stage-hide">Am Beamer ausblenden</button>` : `<button class="btn primary lg" data-action="mk-show" ${m.sessions.length ? '' : 'disabled'}>${icon('screen')}Am Beamer zeigen</button>`}</div>
+    <div class="row">${beamerLink(on)}</div>
   </div>
   <datalist id="mkNames">${c ? presentStudents(c).sort(byFirst).map(s => `<option value="${esc(displayName(s, c))}">`).join('') : ''}</datalist>
   <div class="grid">
@@ -4053,7 +4215,6 @@ function pageMarkt() {
         <label class="check"><input type="checkbox" data-change="mk-flag" data-field="one" ${m.one ? 'checked' : ''}><span>Pro Runde nur eine Session je Person (eine neue Anmeldung ersetzt die alte)</span></label>
         <label class="check"><input type="checkbox" data-change="mk-flag" data-field="input" ${m.input ? 'checked' : ''}><span>Anmeldung direkt am Beamer (Touch-Display oder interaktive Tafel)</span></label>
         <label class="check"><input type="checkbox" data-change="mk-flag" data-field="qr" ${m.qr ? 'checked' : ''}><span>QR-Codes auf den Karten zeigen, wenn ein Link eingetragen ist</span></label>
-        ${m.rounds.length > 1 ? `<div class="setting" style="margin:0"><span>Ansicht am Beamer</span>${seg('mk-view', views, m.view)}</div>` : ''}
         <div class="row">
           <button class="btn" data-action="mk-export" ${total + waiting ? '' : 'disabled'}>Anmeldungen als CSV</button>
           <button class="btn danger" data-action="mk-clear" ${total + waiting ? '' : 'disabled'}>Alle Anmeldungen löschen</button>
@@ -4104,14 +4265,14 @@ function pageStrategien() {
   const st = store.strats, x = stratSection(), cur = x ? stratOf(x.sid) : null, c = activeClass();
   const open = st.items.filter(i => !st.drawn.includes(i.id)).length;
   return `
-  <div class="page-head"><div><h1>Lernstrategien</h1><p class="lead">Eine Bibliothek mit Lernstrategien für den Check-in. Wähle die Lernstrategie des Tages gezielt aus oder lass den Zufall entscheiden. Sie erscheint im Check-in${c ? ` von ${esc(c.name)}` : ''} und lässt sich groß am Beamer zeigen.</p></div></div>
+  <div class="page-head"><div><h1>Lernstrategien</h1><p class="lead">Eine Bibliothek mit Lernstrategien für den Check-in. Wähle die Lernstrategie des Tages gezielt aus oder lass den Zufall entscheiden. Sie erscheint im Check-in${c ? ` von ${esc(c.name)}` : ''}. Groß am Beamer zeigst du sie unter Beamer.</p></div></div>
   <div class="grid">
     <section class="panel s7">
       <div class="panel-head"><h2>Lernstrategie des Tages</h2>${st.noRepeat && st.items.length ? `<span class="muted small">${open} von ${st.items.length} noch nicht dran</span>` : ''}</div>
       ${cur ? `<div class="strat-big ${rt.sFlash ? 'pop' : ''}"><strong>${esc(cur.name)}</strong><p>${esc(cur.text)}</p>${cur.link ? `<a href="${esc(cur.link)}" target="_blank" rel="noopener">Mehr erfahren</a>` : ''}</div>` : '<p class="q-current empty">Noch keine Strategie gewählt.</p>'}
       <div class="row">
         <button class="btn primary lg" data-action="strat-random" data-kind="checkin" ${st.items.length ? '' : 'disabled'}>${icon('dice')}Zufällig wählen</button>
-        ${cur ? `<button class="btn lg" data-action="strat-show">${icon('screen')}Am Beamer zeigen</button>` : ''}
+        ${cur ? beamerLink(boardOn('checkin'), boardOn('checkin') ? 'Check-in am Beamer' : 'Zeigen unter Beamer') : ''}
       </div>
       <div class="row" style="margin-top:16px">
         <label class="check"><input type="checkbox" data-change="strat-norepeat" ${st.noRepeat ? 'checked' : ''}><span>Ohne Wiederholung: Jede Strategie kommt einmal dran, bevor es von vorn losgeht.</span></label>
@@ -4145,17 +4306,11 @@ function pageEinstellungen() {
       <div class="panel-head"><h2>Darstellung</h2></div>
       <div class="setting"><span>Dashboard</span>${seg('set', [['auto', 'Automatisch'], ['light', 'Hell'], ['dark', 'Dunkel']], st.uiTheme, 'data-key="uiTheme"')}
         <span class="muted small">Automatisch folgt der Einstellung deines Computers. Umschalten geht auch über das Symbol oben rechts.</span></div>
-      <div class="setting"><span>Beamer</span>${seg('set', [['board', 'Dunkel'], ['paper', 'Hell']], st.beamerTheme, 'data-key="beamerTheme"')}
-        <span class="muted small">In einem hellen Raum ist die helle Anzeige am Beamer oft besser lesbar.</span></div>
+      <p class="muted small">Hell oder dunkel am Beamer, Namen und alle Einblendungen stellst du unter <button class="linkbtn" data-action="nav" data-page="beamer">Beamer</button> ein.</p>
     </section>
     <section class="panel s6">
-      <div class="panel-head"><h2>Beamer</h2></div>
-      <div class="setting"><span>Namen am Beamer</span>${seg('set', [['auto', 'Automatisch'], ['first', 'Nur Vorname'], ['full', 'Vor- und Nachname']], st.nameMode, 'data-key="nameMode"')}
-        <span class="muted small">Automatisch zeigt den Vornamen und hängt den ersten Buchstaben des Nachnamens an, wenn ein Vorname doppelt vorkommt.</span></div>
-      <div class="stack">
-        <div><p class="small" style="margin:0 0 6px"><strong>Karten am Beamer</strong></p>${cardBeamerRow()}<p class="muted small" style="margin:6px 0 0">Ausgeschaltete Farben werden nur im Dashboard notiert. Die Einstellung gilt für alle Klassen und lässt sich auch direkt bei den SuS und im Karten-Fenster umschalten.</p></div>
-        <label class="check"><input type="checkbox" data-change="set-bool" data-key="sound" ${st.sound ? 'checked' : ''}><span>Töne für Timer, Sterne und Klassenziel</span></label>
-      </div>
+      <div class="panel-head"><h2>Töne</h2></div>
+      <label class="check"><input type="checkbox" data-change="set-bool" data-key="sound" ${st.sound ? 'checked' : ''}><span>Töne für Timer, Sterne und Klassenziel</span></label>
     </section>
     <section class="panel s6">
       <div class="panel-head"><h2>GoPilot</h2></div>
@@ -4163,10 +4318,10 @@ function pageEinstellungen() {
       <p class="muted small">Mit Adresse gibt es im Check-in und Check-out den Knopf <strong>GoPilot-QR</strong>. Der QR-Code öffnet bei den SuS einen vorausgefüllten Eintrag in ihrem GoPilot-Portfolio: die Lernstrategie des Tages oder einen Lerntagebuch-Eintrag mit den Check-out-Fragen. Der Code enthält nur einen Link, es werden keine Daten aus dem Teaching Assistant übertragen. Leer lassen schaltet die Funktion aus.</p>
     </section>
     <section class="panel s6">
-      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 8</span></div>
+      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 9</span></div>
       <dl class="about">
         <dt>Idee und Grundlage</dt><dd><a href="https://classtiles.de" target="_blank" rel="noopener">classtiles.de</a></dd>
-        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
+        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Beamer-Zentrale, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
         <dt>Quellcode</dt><dd><a href="https://github.com/Herr-FR/Gopilot_teaching-assistent" target="_blank" rel="noopener">github.com/Herr-FR/Gopilot_teaching-assistent</a></dd>
         <dt>Enthaltene Programme</dt><dd>PDF.js (Apache 2.0), mammoth.js (BSD-2) und qrcode-generator (MIT). Die Lizenztexte stehen im Quelltext dieser Datei.</dd>
       </dl>
@@ -4185,15 +4340,6 @@ function pageEinstellungen() {
       </div>` : ''}
       <h3>Alles löschen</h3>
       <button class="btn danger" data-action="wipe">Alle Daten löschen</button>
-    </section>
-    <section class="panel s6">
-      <div class="panel-head"><h2>So richtest du den Beamer ein</h2></div>
-      <ol class="guide">
-        <li>Klicke oben rechts auf „Beamer öffnen“. Es öffnet sich ein zweites Fenster.</li>
-        <li>Zieh dieses Fenster auf den Beamer-Bildschirm und drücke dort die Taste F für Vollbild.</li>
-        <li>Steuere alles hier im Dashboard. Die Anzeige am Beamer folgt sofort.</li>
-      </ol>
-      <p class="muted small" style="margin-top:12px">Spiegelt dein Laptop nur den Bildschirm, zeig einfach das Beamer-Fenster im Vollbild. Dort startet und pausiert die Leertaste den Timer, Z zieht einen Namen und Esc schließt eine Einblendung. Im Dashboard gilt dasselbe, dazu springt V in die Vokabel-Eingabe. Q zieht eine Zufallsfrage, die Pfeiltasten (auch ein Presenter) blättern in PDFs und zur nächsten Frage, Esc beendet den Fokus. Für die Mikrofon-Ampel öffne die Datei am besten in Chrome.</p>
     </section>
   </div>`;
 }
@@ -4215,10 +4361,9 @@ function renderAll() {
     <div class="warn-dash" data-live="other-dash" role="alert" hidden></div>
     <div class="status" data-live="top-timer" hidden></div>
     <span class="spacer"></span>
-    <label class="focus-pick" title="Holt einen Bereich am Beamer groß nach vorn">${icon('focus')}<span class="sr">Fokus am Beamer</span><select data-change="focus-select" class="${store.focus ? 'on' : ''}"><option value="">Kein Fokus</option>${FOCUS_TARGETS.map(([k, l]) => `<option value="${k}" ${store.focus === k ? 'selected' : ''}>Fokus: ${l}</option>`).join('')}</select></label>
     <button class="btn ghost icon-only" data-action="ui-toggle" aria-label="${dark ? 'Helles Design' : 'Dunkles Design'}" title="${dark ? 'Helles Design' : 'Dunkles Design'}">${icon(dark ? 'sun' : 'moon')}</button>
-    <button class="btn primary" data-action="open-beamer" data-live="beamer-btn">${icon('screen')}<span> Beamer öffnen</span></button>`;
-  const pages = { unterricht: pageUnterricht, zufall: pageZufall, timer: pageTimer, laut: pageLaut, karten: pageKarten, sterne: pageSterne, vokabeln: pageVokabeln, fragen: pageFragen, medien: pageMedien, checkin: pageCheckin, strategien: pageStrategien, checkout: pageCheckout, markt: pageMarkt, klassen: pageKlassen, einstellungen: pageEinstellungen };
+    <button class="btn primary" data-action="nav" data-page="beamer" ${rt.page === 'beamer' ? 'aria-current="page"' : ''} title="Alles, was am Beamer erscheint">${icon('screen')}<span> Beamer${store.focus ? ' · Fokus' : ''}</span></button>`;
+  const pages = { beamer: pageBeamer, unterricht: pageUnterricht, zufall: pageZufall, timer: pageTimer, laut: pageLaut, karten: pageKarten, sterne: pageSterne, vokabeln: pageVokabeln, fragen: pageFragen, medien: pageMedien, checkin: pageCheckin, strategien: pageStrategien, checkout: pageCheckout, markt: pageMarkt, klassen: pageKlassen, einstellungen: pageEinstellungen };
   $('#page').innerHTML = pages[rt.page](c);
   const slot = $('[data-region="stage-preview"]');
   if (slot && rt.preview) { slot.appendChild(rt.preview.host); rt.preview.show(stageDesc()); }
@@ -4242,14 +4387,14 @@ function openStudentDialog(id) {
       <button class="iconbtn" data-action="dlg-close" aria-label="Schließen">×</button>
     </div>
     <label class="field"><span>Notiz (optional, nur für dich)</span><textarea id="cardNote" rows="2" placeholder="Was ist passiert?"></textarea></label>
-    ${cardBeamerRow('in-dlg')}
+    <p class="muted small cb-note">${icon('screen')}Am Beamer: ${cardBeamerText()}. Einstellen unter Beamer.</p>
     <div class="card-buttons">
       <button class="cardbtn green" data-action="give-card" data-type="green"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICONS.star}</svg><span>Lob</span></button>
       <button class="cardbtn yellow" data-action="give-card" data-type="yellow"><span>Gelbe Karte</span></button>
       <button class="cardbtn red" data-action="give-card" data-type="red"><span>Rote Karte</span></button>
     </div>
     <div class="row">
-      <button class="btn" data-action="call-student">Am Beamer aufrufen</button>
+      <button class="btn" data-action="call-student">Aufrufen</button>
       <button class="btn ghost" data-action="toggle-absent">${absent ? 'Doch anwesend' : 'Heute abwesend'}</button>
     </div>
     ${today.length ? `<h3>Heute</h3><ul class="log">${today.map(k => `<li><span class="badge ${k.type}" aria-hidden="true"></span><div class="log-main"><div>${CARD[k.type].long} <span class="muted small">${fmtWhen(k.t)}</span></div>${k.note ? `<div class="log-note">${esc(k.note)}</div>` : ''}</div></li>`).join('')}</ul>` : ''}
@@ -4359,6 +4504,7 @@ const actions = {
   'vocab-export': exportVocab,
   'vocab-clear': el => armed(el, () => { activeClass().vocab.items = []; commit(); toast('Die Vokabelliste ist leer.'); }),
   focus: el => { store.focus = store.focus === el.dataset.val ? null : el.dataset.val; commit(); },
+  'focus-set': el => { store.focus = el.dataset.val || null; commit(); },
   'media-show': el => showMedia(el.dataset.id),
   'media-del': el => armed(el, () => deleteMedia(el.dataset.id)),
   'web-window': el => {
@@ -4374,7 +4520,8 @@ const actions = {
   'stage-restart': () => stageSet({ restart: (store.stage.restart || 0) + 1, paused: false }),
   'stage-reload': () => stageSet({ reload: (store.stage.reload || 0) + 1 }),
   'q-draw': () => drawQuestion(),
-  'q-answer': () => { if (store.stage && store.stage.kind === 'question') { store.stage.showAnswer = !store.stage.showAnswer; commit(); } },
+  'q-answer': () => { if (store.qcur) { store.qcur.showAnswer = !store.qcur.showAnswer; commit(); } },
+  'q-stage': showQuestion,
   'q-box-activate': el => { store.activeBoxId = el.dataset.id; commit(); },
   'q-box-delete': el => armed(el, () => {
     const b = activeBox();
@@ -4403,7 +4550,7 @@ const actions = {
     toast('Beispielbox mit 8 Fragen angelegt.');
   },
   'strat-random': el => drawStrategy(el.dataset.kind || 'checkin', el.dataset.sec),
-  'strat-pick': el => { const x = stratSection(), i = stratOf(el.dataset.id); if (x && i) setStrategy(x, i); },
+  'strat-pick': el => { const i = stratOf(el.dataset.id), x = i && ensureStratSection(); if (x) setStrategy(x, i); },
   'strat-show': () => { const b = boardOf('checkin'), x = stratSection(); if (!b || !x) return; x.on = true; b.view = x.id; showBoard('checkin'); },
   'strat-reset': () => { store.strats.drawn = []; commit(); toast('Alle Strategien sind wieder im Topf.'); },
   'strat-del': el => armed(el, () => {
@@ -4447,6 +4594,38 @@ const actions = {
   },
   'bd-item-del': el => { const x = secOf(el.dataset.kind, el.dataset.sec); if (x) { x.items = x.items.filter(i => i.id !== el.dataset.item); commit(); } },
   'bd-reset': el => armed(el, () => resetBoard(el.dataset.kind)),
+  'bd-sec-add': el => {
+    const kind = el.dataset.kind, b = boardOf(kind), type = el.dataset.type;
+    if (!b) return;
+    if (type === 'strategy' && b.sections.some(x => x.type === 'strategy')) return;
+    const x = newSection(type);
+    b.sections.push(x);
+    commit();
+    toast(`${SEC_TYPES[type]} hinzugefügt.`);
+    const panel = $(`[data-sec-panel="${x.id}"]`), inp = $(`[data-sec="${x.id}"][data-field="q"]`);
+    if (panel) panel.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (inp) { inp.focus({ preventScroll: true }); inp.select(); }
+  },
+  'bd-sec-move': el => {
+    const b = boardOf(el.dataset.kind), x = secOf(el.dataset.kind, el.dataset.sec);
+    if (!x) return;
+    const i = b.sections.indexOf(x), j = clamp(i + +el.dataset.d, 0, b.sections.length - 1);
+    if (i === j) return;
+    b.sections.splice(i, 1);
+    b.sections.splice(j, 0, x);
+    commit();
+  },
+  'bd-sec-del': el => armed(el, () => {
+    const b = boardOf(el.dataset.kind), x = secOf(el.dataset.kind, el.dataset.sec);
+    if (!x) return;
+    const i = b.sections.indexOf(x);
+    b.sections.splice(i, 1);
+    if (b.view === x.id) b.view = 'all';
+    commit();
+    toast(`${secLabel(x)} gelöscht.`, { undo: () => { b.sections.splice(Math.min(i, b.sections.length), 0, x); commit(); } });
+  }),
+  'bd-sec-color': el => { const x = secOf(el.dataset.kind, el.dataset.sec); if (x) { x.color = el.dataset.val; commit(); } },
+  'bd-hide-toggle': el => { const x = secOf(el.dataset.kind, el.dataset.sec); if (x) { x.hide = !x.hide; commit(); } },
   'bd-gopilot': el => {
     const kind = el.dataset.kind, b = boardOf(kind);
     if (!b) return;
@@ -4464,7 +4643,7 @@ const actions = {
     }
     x.on = true;
     commit();
-    toast('GoPilot-QR ist bereit. Mit „Groß zeigen“ erscheint er bildschirmfüllend am Beamer.');
+    toast('GoPilot-QR ist bereit. Unter Beamer kannst du ihn bildschirmfüllend zeigen.');
   },
   'bd-export': el => exportBoard(el.dataset.kind),
   'mk-show': showMarket,
@@ -4507,7 +4686,9 @@ const actions = {
   'call-student': () => {
     const c = activeClass(), s = c.students.find(x => x.id === rt.dlgStudent);
     $('#dlg').close();
-    if (s) { send('event', { name: 'pick', data: { name: displayName(s, c), roll: [] } }); toast(`${fullName(s)} wird am Beamer angezeigt.`); }
+    if (!s) return;
+    if (store.beamer.picks) { send('event', { name: 'pick', data: { name: displayName(s, c), roll: [] } }); toast(`${fullName(s)} wird am Beamer angezeigt.`); }
+    else toast(`${fullName(s)} ist dran. Namen am Beamer sind unter Beamer ausgeschaltet.`);
   },
   'card-delete': el => {
     const card = store.cards.find(k => k.id === el.dataset.id);
@@ -4552,7 +4733,13 @@ const changes = {
   'vocab-lang': el => { activeClass().vocab.lang = el.value; commit(); },
   'vocab-auto': el => { store.settings.vocabAuto = el.checked; commit(); },
   'vocab-email': el => { store.settings.vocabEmail = el.value.trim(); save(); },
-  'focus-select': el => { store.focus = el.value || null; commit(); },
+  'bm-flag': el => {
+    const k = el.dataset.key;
+    if (k === 'vocab') { const c = activeClass(); if (c) c.vocab.show = el.checked; }
+    else store.beamer[k] = el.checked;
+    if (!el.checked && k === 'picks') send('event', { name: 'hide' });
+    commit();
+  },
   'media-files': el => { const fs = [...el.files]; el.value = ''; if (fs.length) addFiles(fs); },
   'media-rename': el => { const m = store.media.find(x => x.id === el.dataset.id); if (m && el.value.trim()) { m.name = el.value.trim(); save(); pushState(); } },
   'q-box-select': el => { store.activeBoxId = el.value; commit(); },
@@ -4583,6 +4770,7 @@ const changes = {
   },
   'note-edit': el => { const m = store.media.find(x => x.id === el.dataset.id); if (m) { m.text = el.value; save(); pushState(); } },
   'bd-flag': el => { const b = boardOf(el.dataset.kind); if (b) { b[el.dataset.field] = el.checked; commit(); } },
+  'bd-title': el => { const b = boardOf(el.dataset.kind), v = el.value.trim(); if (b) { b.title = v || (el.dataset.kind === 'checkin' ? 'Check-in' : 'Check-out'); commit(); } },
   'bd-sec-on': el => {
     const b = boardOf(el.dataset.kind), x = secOf(el.dataset.kind, el.dataset.sec);
     if (!x) return;
@@ -4717,7 +4905,7 @@ const submits = {
     commit();
     toast(`${n} ${n === 1 ? 'Frage' : 'Fragen'} hinzugefügt.`);
   },
-  'web-add': f => { const item = addWeb(f.elements.url.value, f.elements.title.value); if (item) showMedia(item.id); },
+  'web-add': f => { const item = addWeb(f.elements.url.value, f.elements.title.value); if (item) { commit(); toast(`${item.name} ist in der Bibliothek. Zeigen kannst du es unter Beamer.`); } },
   'strat-add': f => {
     const name = f.elements.name.value.trim();
     if (!name) return;
@@ -4732,7 +4920,8 @@ const submits = {
     if (!text) return;
     const m = { id: uid(), kind: 'note', cat: 'note', name: title || text.split(/\r?\n/)[0].slice(0, 48), title, text, t: Date.now() };
     store.media.unshift(m);
-    showMedia(m.id);
+    commit();
+    toast('Der Text ist in der Bibliothek. Zeigen kannst du ihn unter Beamer.');
   },
   'bd-card-add': f => {
     boardCard(f.dataset.kind, f.dataset.sec, f.elements.text.value, false);
