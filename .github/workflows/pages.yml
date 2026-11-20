@@ -27,7 +27,7 @@ jobs:
       - name: Seite zusammenstellen
         run: |
           mkdir -p _site
-          cp index.html favicon.png apple-touch-icon.png .nojekyll _site/
+          cp index.html sw.js favicon.png apple-touch-icon.png .nojekyll _site/
 
       - name: Pages einrichten
         uses: actions/configure-pages@v5
