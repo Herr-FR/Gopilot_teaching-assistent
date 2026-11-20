@@ -1162,6 +1162,30 @@ dialog { border-radius: 12px; }
 .linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
 .bm-info .stage-title { margin-bottom: 8px; }
 
+/* ===================== Version 10: Hauptmenüs mit Untermenüs ===================== */
+.nav { gap: 4px; }
+.nav-group { display: flex; flex-direction: column; gap: 2px; }
+.nav-main { display: flex; align-items: center; gap: 2px; }
+.nav-main > button:first-child { flex: 1; font-weight: 600; font-size: 15.5px; }
+.nav-group.in > .nav-main > button:first-child:not([aria-current]) { color: #FFFFFF; background: rgba(255,255,255,.06); }
+.nav .nav-toggle { flex: none; width: 34px; justify-content: center; padding: 8px 0; }
+.nav .nav-toggle .ic { width: 16px; height: 16px; transition: transform .15s; }
+.nav .nav-toggle[aria-expanded="true"] .ic { transform: rotate(180deg); }
+.nav-sub { display: flex; flex-direction: column; gap: 1px; margin: 2px 0 6px 21px; padding-left: 10px; border-left: 1px solid rgba(185,220,245,.28); }
+.nav-sub[hidden] { display: none; }
+.nav-sub button { font-size: 14px; padding-top: 6px !important; padding-bottom: 6px !important; gap: 10px; }
+.nav-sub button .ic { width: 17px; height: 17px; }
+.subtabs { display: none; }
+@media (max-width: 760px) {
+  .nav { flex-direction: row; gap: 2px; }
+  .nav-group { flex-direction: row; }
+  .nav-sub, .nav .nav-toggle { display: none !important; }
+  .subtabs:not([hidden]) { display: flex; gap: 6px; overflow-x: auto; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--topbar); }
+  .subtabs button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; padding: 7px 12px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--field); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; }
+  .subtabs button .ic { width: 16px; height: 16px; }
+  .subtabs button[aria-current="page"] { background: #14508C; border-color: #14508C; color: #FFFFFF; font-weight: 600; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -1411,6 +1435,34 @@ const PAGES = [
   ['klassen', 'Klassen', 'users'],
   ['einstellungen', 'Einstellungen', 'sliders'],
 ];
+// Hauptmenüs: [Seite des Hauptmenüs, Seiten im Untermenü]
+const NAV_GROUPS = [
+  ['unterricht', ['zufall', 'fragen', 'timer', 'laut', 'sterne', 'karten', 'vokabeln', 'klassen']],
+  ['beamer', ['medien', 'markt', 'einstellungen']],
+  ['checkin', ['strategien']],
+  ['checkout', []],
+];
+const pageInfo = id => PAGES.find(p => p[0] === id) || [id, id, 'board'];
+const groupOf = id => NAV_GROUPS.find(([m, subs]) => m === id || subs.includes(id)) || NAV_GROUPS[0];
+function navHTML() {
+  const g = groupOf(rt.page)[0];
+  return NAV_GROUPS.map(([main, subs]) => {
+    const [, label, ic] = pageInfo(main), inGroup = g === main, open = subs.length && (inGroup || rt.navOpen === main);
+    return `<div class="nav-group ${inGroup ? 'in' : ''} ${open ? 'open' : ''}">
+      <div class="nav-main">
+        <button data-action="nav" data-page="${main}" ${rt.page === main ? 'aria-current="page"' : ''}>${icon(ic)}<span>${label}</span></button>
+        ${subs.length && !inGroup ? `<button class="nav-toggle" data-action="nav-toggle" data-group="${main}" aria-expanded="${!!open}" aria-label="Untermenü ${label} ${open ? 'schließen' : 'öffnen'}">${icon('down')}</button>` : ''}
+      </div>
+      ${subs.length ? `<div class="nav-sub" ${open ? '' : 'hidden'}>${subs.map(id => { const [, l, i] = pageInfo(id); return `<button data-action="nav" data-page="${id}" ${rt.page === id ? 'aria-current="page"' : ''}>${icon(i)}<span>${l}</span></button>`; }).join('')}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+// Untermenü als Reiter über der Seite, auf schmalen Bildschirmen statt der Seitenleiste
+function subtabsHTML() {
+  const [main, subs] = groupOf(rt.page);
+  if (!subs.length) return '';
+  return [main, ...subs].map(id => { const [, l, i] = pageInfo(id); return `<button data-action="nav" data-page="${id}" ${rt.page === id ? 'aria-current="page"' : ''}>${icon(i)}<span>${id === main ? ({ unterricht: 'Übersicht', beamer: 'Steuerung', checkin: 'Bereiche' }[id] || l) : l}</span></button>`; }).join('');
+}
 
 /* ---------- Datenhaltung ---------- */
 function newReward() {
@@ -4318,10 +4370,10 @@ function pageEinstellungen() {
       <p class="muted small">Mit Adresse gibt es im Check-in und Check-out den Knopf <strong>GoPilot-QR</strong>. Der QR-Code öffnet bei den SuS einen vorausgefüllten Eintrag in ihrem GoPilot-Portfolio: die Lernstrategie des Tages oder einen Lerntagebuch-Eintrag mit den Check-out-Fragen. Der Code enthält nur einen Link, es werden keine Daten aus dem Teaching Assistant übertragen. Leer lassen schaltet die Funktion aus.</p>
     </section>
     <section class="panel s6">
-      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 9</span></div>
+      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 10</span></div>
       <dl class="about">
         <dt>Idee und Grundlage</dt><dd><a href="https://classtiles.de" target="_blank" rel="noopener">classtiles.de</a></dd>
-        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Beamer-Zentrale, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
+        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Beamer-Zentrale, Menü mit Untermenüs, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
         <dt>Quellcode</dt><dd><a href="https://github.com/Herr-FR/Gopilot_teaching-assistent" target="_blank" rel="noopener">github.com/Herr-FR/Gopilot_teaching-assistent</a></dd>
         <dt>Enthaltene Programme</dt><dd>PDF.js (Apache 2.0), mammoth.js (BSD-2) und qrcode-generator (MIT). Die Lizenztexte stehen im Quelltext dieser Datei.</dd>
       </dl>
@@ -4352,7 +4404,10 @@ function applyUiTheme() { document.documentElement.dataset.ui = isDarkUi() ? 'da
 function renderAll() {
   const c = activeClass(), dark = isDarkUi();
   applyUiTheme();
-  $('#nav').innerHTML = PAGES.map(([id, label, ic]) => `<button data-action="nav" data-page="${id}" ${rt.page === id ? 'aria-current="page"' : ''}>${icon(ic)}<span>${label}</span></button>`).join('');
+  $('#nav').innerHTML = navHTML();
+  const sub = subtabsHTML();
+  $('#subtabs').innerHTML = sub;
+  $('#subtabs').hidden = !sub;
   $('#topbar').innerHTML = `
     <div class="class-pick">
       ${store.classes.length ? `<label for="classSel">Klasse</label><select id="classSel" data-change="class-select">${store.classes.map(k => `<option value="${k.id}" ${k.id === store.activeClassId ? 'selected' : ''}>${esc(k.name)}</option>`).join('')}</select>` : '<span class="muted">Noch keine Klasse</span>'}
@@ -4404,7 +4459,8 @@ function openStudentDialog(id) {
 
 /* ---------- Aktionen ---------- */
 const actions = {
-  nav: el => { rt.page = el.dataset.page; renderAll(); window.scrollTo(0, 0); },
+  nav: el => { rt.page = el.dataset.page; rt.navOpen = null; renderAll(); window.scrollTo(0, 0); },
+  'nav-toggle': el => { rt.navOpen = rt.navOpen === el.dataset.group ? null : el.dataset.group; $('#nav').innerHTML = navHTML(); const t = $(`#nav [data-group="${el.dataset.group}"]`); if (t) t.focus(); },
   'open-beamer': openBeamer,
   'beamer-hide': () => send('event', { name: 'hide' }),
   demo: () => {
@@ -4975,6 +5031,7 @@ function initDashboard() {
       </aside>
       <div class="main">
         <header class="topbar" id="topbar"></header>
+        <nav class="subtabs" id="subtabs" aria-label="Untermenü" hidden></nav>
         <main class="page" id="page"></main>
       </div>
     </div>
