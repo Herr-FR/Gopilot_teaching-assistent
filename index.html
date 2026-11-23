@@ -1364,6 +1364,46 @@ dialog { border-radius: 12px; }
 .bm.hp-question-badge .q-badge, .bm.hp-question-box .q-box { display: none !important; }
 .bm.hp-market-head .bd-head, .bm.hp-market-meta .mk-meta, .bm.hp-market-by .mk-by, .bm.hp-market-count .mk-barrow { display: none !important; }
 
+/* ===================== Version 14: Beamer-Zentrale ===================== */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 440px; z-index: 40; display: flex; flex-direction: column; background: var(--surface, #FFFFFF); border-left: 1px solid var(--border-strong); box-shadow: -8px 0 28px rgba(20, 80, 140, .12); }
+.drawer[hidden] { display: none; }
+body.drawer-open .main { margin-right: 440px; }
+.dr-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 14px 16px 10px 18px; color: #FFFFFF; background: linear-gradient(135deg, #1E87C8, #14508C); border-bottom: 3px solid #B9DCF5; }
+.dr-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; color: #FFFFFF; }
+.dr-head h2 .ic { width: 20px; height: 20px; }
+.dr-head .btn { color: #FFFFFF; font-size: 22px; line-height: 1; }
+.dr-status .status { color: #E8F2FB; font-size: 13px; margin-top: 4px; }
+.dr-live { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg, #F4F6F8); }
+.dr-live .row { justify-content: space-between; margin-top: 8px; }
+.dr-preview { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 8px; background: #0F2A5E; box-shadow: 0 0 0 1px var(--border-strong); }
+.dr-frame { position: absolute; top: 0; left: 0; width: 1280px; height: 720px; border: 0; transform-origin: 0 0; transform: scale(calc(406 / 1280)); pointer-events: none; }
+.dr-body { flex: 1; overflow-y: auto; padding: 4px 16px 18px; }
+.dr-sec { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.dr-sec:last-of-type { border-bottom: 0; }
+.dr-sec h3 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.dr-sec h3 .muted { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.dr-sec select.input { flex: 1; min-width: 0; }
+.dr-page { margin-top: 8px; gap: 6px; }
+.dr-page .btn .ic { width: 15px; height: 15px; }
+.dr-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0; cursor: pointer; }
+.dr-row > span { display: flex; flex-direction: column; min-width: 0; }
+.dr-row > span .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dr-msg { margin: 2px 0 8px; } .dr-msg input { flex: 1; min-width: 0; }
+.dr-cards { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.dr-add { margin-top: 8px; gap: 4px; }
+.dr-add .btn { padding: 4px 8px; font-size: 12.5px; }
+.dr-sec .bmc-part { margin-bottom: 8px; }
+.dr-foot { padding-top: 14px; }
+/* Schalter */
+input.sw { appearance: none; -webkit-appearance: none; flex: none; width: 44px; height: 26px; margin: 0; border-radius: 99px; background: #C9D3DD; position: relative; cursor: pointer; transition: background .15s; }
+input.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
+input.sw:checked { background: #14508C; }
+input.sw:checked::after { transform: translateX(18px); }
+input.sw:focus-visible { outline: 3px solid #FAE561; outline-offset: 2px; }
+/* Vorschau im Beamer-Fenster: keine Bedienleiste, keine Hinweise */
+.bm.is-preview .bm-controls, .bm.is-preview .bm-hint { display: none !important; }
+@media (max-width: 1100px) { body.drawer-open .main { margin-right: 0; } .drawer { width: min(440px, 100vw); } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -1414,6 +1454,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    ============================================================ */
 const STORE_KEY = 'mmbbsTeachingAssistant.v1';
 const IS_BEAMER = location.hash.startsWith('#beamer');
+// Live-Vorschau in der Beamer-Zentrale: zeigt dasselbe wie der Beamer, meldet sich aber nicht als Beamer
+const IS_PREVIEW = IS_BEAMER && /[&?]preview/.test(location.hash);
 // Auf classtiles.de liegt die Datei nur zum Laden. Die Website legt nichts auf dem Gerät ab (kein Cookie-Banner),
 // also dort kein Speichern, kein Mikrofon, keine Wörterbuch-Abfrage, nur der Hinweis zum Herunterladen.
 const HOSTED = false;
@@ -1499,8 +1541,9 @@ try { channel = new BroadcastChannel('mmbbs-teaching-assistant'); } catch (e) { 
 const seenIds = [];
 
 function send(type, payload = {}) {
-  const msg = { app: 'mmbbs-ta', from: ROLE, id: uid(), type, dash: DASH_ID || undefined, to: IS_BEAMER ? B.dash : undefined, ...payload };
+  const msg = { app: 'mmbbs-ta', from: ROLE, id: uid(), type, dash: DASH_ID || undefined, to: IS_BEAMER ? B.dash : undefined, preview: IS_PREVIEW || undefined, ...payload };
   if (peerWin && !peerWin.closed) { try { peerWin.postMessage(msg, '*'); } catch (e) { /* Fenster weg */ } }
+  if (!IS_BEAMER && rt.pvWin) { try { rt.pvWin.postMessage(msg, '*'); } catch (e) { /* Vorschau weg */ } }
   if (channel) { try { channel.postMessage(msg); } catch (e) { /* Kanal geschlossen */ } }
 }
 function beamerAccepts(msg) {
@@ -2155,6 +2198,7 @@ function getAudio() {
   return audioCtx;
 }
 function tone(freq, start, dur, gain = .25, type = 'sine') {
+  if (IS_PREVIEW) return;
   const ctx = getAudio();
   if (!ctx) return;
   const t0 = ctx.currentTime + start, o = ctx.createOscillator(), g = ctx.createGain();
@@ -2576,6 +2620,8 @@ function pushState() {
   send('state', { state: snapshot() });
 }
 function onDashMessage(msg, source) {
+  // Die Live-Vorschau zählt nicht als Beamer
+  if (msg.preview) { if (msg.type === 'hello') pushState(); if (msg.type === 'command' && msg.cmd === 'file') FileStore.get(msg.id).then(blob => send('event', { name: 'file', data: { id: msg.id, blob } })); return; }
   if (source) peerWin = source;
   rt.lastPing = Date.now();
   if (msg.type === 'hello') pushState();
@@ -3096,7 +3142,7 @@ class Viewer {
     if (d.cat === 'image') {
       h.innerHTML = `<div class="mv-pan"><img class="mv-img" alt="${name}" src="${this.url}"></div>`;
     } else if (d.cat === 'video') {
-      h.innerHTML = `<video class="mv-video" src="${this.url}" controls playsinline></video>`;
+      h.innerHTML = `<video class="mv-video" src="${this.url}" controls playsinline ${IS_PREVIEW ? 'muted' : ''}></video>`;
       this.lastPaused = undefined;
     } else if (d.cat === 'audio') {
       h.innerHTML = `<div class="mv-msg">${icon('play')}<strong>${name}</strong><audio class="mv-video mv-audio" src="${this.url}" controls></audio></div>`;
@@ -4261,6 +4307,98 @@ function beamerCustomPanels() {
       ${partsHTML(Object.keys(PARTS))}
     </section>`;
 }
+/* ---------- Beamer-Zentrale: von überall erreichbar, mit Live-Vorschau ---------- */
+function stageOptions() {
+  const c = activeClass(), s = store.stage;
+  const cur = !s ? '' : s.kind === 'board' ? s.board : s.kind === 'media' ? 'media:' + s.id : s.kind === 'field' ? 'field:' + s.id : s.kind;
+  const opts = [['', 'Nur Uhr und Timer'], ['checkin', boardOf('checkin').title], ['checkout', boardOf('checkout').title]];
+  if (store.market.sessions.length) opts.push(['market', 'Sessionmarkt']);
+  if (store.qboxes.some(b => b.items.length)) opts.push(['question', 'Zufallsfrage']);
+  if (c && c.groups.list.length) opts.push(['groups', 'Gruppen']);
+  if (curChallenge()) opts.push(['challenge', 'Mini-Challenge: ' + curChallenge().title]);
+  const media = store.media.map(m => ['media:' + m.id, 'Medien: ' + m.name]);
+  const fields = store.fields.filter(fieldReady).map(f => ['field:' + f.id, 'Feld: ' + (f.title || fType(f.type)[1])]);
+  if (s && s.kind === 'screen') opts.push(['screen', 'Geteiltes Fenster']);
+  const o = ([v, l]) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(l)}</option>`;
+  return opts.map(o).join('') + (media.length ? `<optgroup label="Medien">${media.map(o).join('')}</optgroup>` : '') + (fields.length ? `<optgroup label="Eigene Felder">${fields.map(o).join('')}</optgroup>` : '');
+}
+function drRow(label, sub, input) {
+  return `<label class="dr-row"><span><strong>${label}</strong>${sub ? `<span class="muted small">${sub}</span>` : ''}</span>${input}</label>`;
+}
+const drSwitch = (attrs, on) => `<input type="checkbox" class="sw" ${attrs} ${on ? 'checked' : ''}>`;
+function drawerHTML() {
+  const c = activeClass(), bm = store.beamer, d = stageDesc(), area = stageArea();
+  const fields = store.fields.filter(f => f.area === 'all' || f.area === area);
+  const partAreas = ['kopf', ...(PARTS[area] ? [area] : [])];
+  const pageable = d && (d.kind === 'board' || d.kind === 'market' || d.kind === 'question' || (d.kind === 'media' && /^(pdf|docx|text)$/.test(d.cat)) || (d.kind === 'challenge' && d.material && d.material.cat === 'pdf'));
+  return `
+    <section class="dr-sec">
+      <h3>Hauptfläche</h3>
+      <div class="row nowrap"><select class="input" data-change="dr-stage" aria-label="Was auf der Hauptfläche läuft">${stageOptions()}</select>
+        ${store.stage ? '<button class="btn small" data-action="stage-hide">Ausblenden</button>' : ''}</div>
+      ${pageable ? `<div class="row nowrap dr-page"><button class="btn small" data-action="dr-page" data-d="-1">${icon('left')}Zurück</button><button class="btn small" data-action="dr-page" data-d="1">Weiter${icon('right')}</button><span class="muted small">auch mit Pfeiltasten oder Presenter</span></div>` : ''}
+    </section>
+    <section class="dr-sec">
+      <h3>Einblendungen</h3>
+      ${drRow('Timer', store.timer.state === 'idle' ? 'zurzeit kein Timer' : 'läuft', drSwitch('data-change="bm-flag" data-key="timer"', bm.timer))}
+      ${drRow('Ampel', rt.noise.source === 'off' ? 'unter Lautstärke aus' : '', drSwitch('data-change="bm-flag" data-key="ampel"', bm.ampel))}
+      ${drRow('Sterne und Klassenziel', c ? '' : 'braucht eine Klasse', drSwitch('data-change="bm-flag" data-key="stars"', bm.stars))}
+      ${drRow('Namen aus dem Zufall', '', drSwitch('data-change="bm-flag" data-key="picks"', bm.picks))}
+      ${drRow('Hinweis unter der Uhr', store.message.trim() ? esc(store.message.trim().slice(0, 60)) : 'noch kein Text', drSwitch('data-change="bm-flag" data-key="message"', bm.message))}
+      <div class="row nowrap dr-msg"><input type="text" value="${esc(store.message)}" data-input="message" placeholder="Hinweis eingeben" aria-label="Hinweis am Beamer"><button class="btn ghost small" data-action="message-clear">Leeren</button></div>
+      <div class="dr-cards"><span class="muted small">Karten am Beamer</span>${cardBeamerRow()}</div>
+    </section>
+    <section class="dr-sec">
+      <h3>Eigene Felder <span class="muted small">${area === 'clock' ? 'gerade aktiv' : 'für ' + esc(fAreaName(area).replace(/^(Beim|Bei der|Bei den|Bei) /, ''))}</span></h3>
+      ${fields.length ? fields.map(f => drRow(esc(f.title || fType(f.type)[1]), `${fType(f.type)[1]} · ${(F_POS.find(p => p[0] === f.pos) || [])[1]}${fieldReady(f) ? '' : ' · noch leer'}`, drSwitch(`data-change="f-on" data-id="${f.id}"`, f.on))).join('') : '<p class="muted small">Keine eigenen Felder für diese Ansicht.</p>'}
+      <div class="bf-add dr-add">${F_TYPES.map(([k, l, ic]) => `<button class="btn ghost small" data-action="dr-f-add" data-type="${k}" data-area="${area === 'clock' ? 'all' : area}" title="${l} hinzufügen">${icon(ic)}${l}</button>`).join('')}</div>
+    </section>
+    <section class="dr-sec">
+      <h3>Standardteile</h3>
+      ${partsHTML(partAreas)}
+    </section>
+    <section class="dr-sec">
+      <h3>Fokus</h3>
+      <div class="row chips">
+        <button class="chip" data-action="focus-set" data-val="" aria-pressed="${!store.focus}">Kein Fokus</button>
+        ${FOCUS_TARGETS.map(([k, l]) => `<button class="chip" data-action="focus-set" data-val="${k}" aria-pressed="${store.focus === k}">${k === 'stage' ? 'Hauptfläche' : l}</button>`).join('')}
+      </div>
+    </section>
+    <div class="dr-foot"><button class="btn" data-action="dr-all">${icon('sliders')}Alle Beamer-Einstellungen</button></div>`;
+}
+try { if (!IS_BEAMER) rt.drawer = localStorage.getItem('mmbbs-ta-drawer') === '1'; } catch (e) { /* ohne Speicher */ }
+function renderDrawer() {
+  const dr = $('#drawer');
+  if (!dr) return;
+  const open = !!rt.drawer;
+  dr.hidden = !open;
+  document.body.classList.toggle('drawer-open', open);
+  if (!open) {
+    if (rt.pvFrame) { rt.pvFrame.remove(); rt.pvFrame = null; rt.pvWin = null; }
+    return;
+  }
+  // Nicht neu zeichnen, während im Hinweisfeld getippt wird
+  const act = document.activeElement;
+  if (!(act && $('#drBody').contains(act) && act.matches('input[type="text"], select'))) $('#drBody').innerHTML = drawerHTML();
+  if (!rt.pvFrame) {
+    const f = document.createElement('iframe');
+    f.className = 'dr-frame';
+    f.title = 'Live-Vorschau des Beamers';
+    f.setAttribute('tabindex', '-1');
+    f.src = location.href.split('#')[0] + '#beamer=' + DASH_ID + '&preview';
+    f.addEventListener('load', () => { rt.pvWin = f.contentWindow; pushState(); });
+    $('#drPreview').appendChild(f);
+    rt.pvFrame = f;
+    const fit = () => { const w = $('#drPreview').clientWidth; if (w) f.style.transform = `scale(${w / 1280})`; };
+    if (!rt.pvRO && 'ResizeObserver' in window) { rt.pvRO = new ResizeObserver(() => { if (rt.pvFrame) { const w = $('#drPreview').clientWidth; if (w) rt.pvFrame.style.transform = `scale(${w / 1280})`; } }); rt.pvRO.observe($('#drPreview')); }
+    fit();
+  }
+}
+function toggleDrawer(force) {
+  rt.drawer = typeof force === 'boolean' ? force : !rt.drawer;
+  try { localStorage.setItem('mmbbs-ta-drawer', rt.drawer ? '1' : ''); } catch (e) { /* ohne Speicher */ }
+  renderAll();
+}
 
 /* ---------- Beamer: alles, was am Beamer erscheint, an einer Stelle ---------- */
 function beamerInfoPanel(span) {
@@ -4289,7 +4427,7 @@ function pageBeamer(c) {
   const avail = { stage: !!stageDesc(), timer: bm.timer, clock: true, ampel: bm.ampel && rt.noise.source !== 'off', stars: bm.stars && !!c, message: bm.message && !!store.message.trim() };
   const liga = ligaRows();
   return `
-  <div class="page-head"><div><h1>Beamer</h1><p class="lead">Hier legst du fest, was am Beamer zu sehen ist: was groß auf der Hauptfläche läuft, was zusätzlich eingeblendet wird und was im Fokus steht. In allen anderen Bereichen bereitest du Inhalte nur vor.</p></div>
+  <div class="page-head"><div><h1>Beamer</h1><p class="lead">Alle Einstellungen für den Beamer. Was gerade zu sehen ist, steuerst du von überall aus mit der <button class="linkbtn" data-action="drawer">Beamer-Zentrale</button> oben rechts (Taste B), mit Live-Vorschau. Hier legst du fest, was am Beamer zu sehen ist: was groß auf der Hauptfläche läuft, was zusätzlich eingeblendet wird und was im Fokus steht. In allen anderen Bereichen bereitest du Inhalte nur vor.</p></div>
     <div class="row"><div class="status" data-live="beamer-status"></div><button class="btn primary lg" data-action="open-beamer" data-live="beamer-btn">${icon('screen')}<span> Beamer-Fenster öffnen</span></button></div>
   </div>
   <div class="grid">
@@ -5219,10 +5357,10 @@ function pageEinstellungen() {
       <p class="muted small">Mit Adresse gibt es im Check-in und Check-out den Knopf <strong>GoPilot-QR</strong>. Der QR-Code öffnet bei den SuS einen vorausgefüllten Eintrag in ihrem GoPilot-Portfolio: die Lernstrategie des Tages oder einen Lerntagebuch-Eintrag mit den Check-out-Fragen. Der Code enthält nur einen Link, es werden keine Daten aus dem Teaching Assistant übertragen. Leer lassen schaltet die Funktion aus.</p>
     </section>
     <section class="panel s6">
-      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 13</span></div>
+      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 14</span></div>
       <dl class="about">
         <dt>Idee und Grundlage</dt><dd><a href="https://classtiles.de" target="_blank" rel="noopener">classtiles.de</a></dd>
-        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Beamer-Zentrale, Menü mit Untermenüs, Gruppengenerator, Mini-Challenge mit H5P, Beamer individuell mit eigenen Feldern, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
+        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Beamer-Zentrale, Menü mit Untermenüs, Gruppengenerator, Mini-Challenge mit H5P, Beamer individuell mit eigenen Feldern, Beamer-Zentrale mit Live-Vorschau, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
         <dt>Quellcode</dt><dd><a href="https://github.com/Herr-FR/Gopilot_teaching-assistent" target="_blank" rel="noopener">github.com/Herr-FR/Gopilot_teaching-assistent</a></dd>
         <dt>Enthaltene Programme</dt><dd>PDF.js (Apache 2.0), mammoth.js (BSD-2) und qrcode-generator (MIT). Die Lizenztexte stehen im Quelltext dieser Datei.</dd>
       </dl>
@@ -5266,13 +5404,14 @@ function renderAll() {
     <div class="status" data-live="top-timer" hidden></div>
     <span class="spacer"></span>
     <button class="btn ghost icon-only" data-action="ui-toggle" aria-label="${dark ? 'Helles Design' : 'Dunkles Design'}" title="${dark ? 'Helles Design' : 'Dunkles Design'}">${icon(dark ? 'sun' : 'moon')}</button>
-    <button class="btn primary" data-action="nav" data-page="beamer" ${rt.page === 'beamer' ? 'aria-current="page"' : ''} title="Alles, was am Beamer erscheint">${icon('screen')}<span> Beamer${store.focus ? ' · Fokus' : ''}</span></button>`;
+    <button class="btn primary" data-action="drawer" aria-expanded="${!!rt.drawer}" title="Beamer-Zentrale: alles, was gerade am Beamer zu sehen ist (B)">${icon('screen')}<span> Beamer-Zentrale${store.focus ? ' · Fokus' : ''}</span></button>`;
   const pages = { gruppen: pageGruppen, challenge: pageChallenge, beamer: pageBeamer, unterricht: pageUnterricht, zufall: pageZufall, timer: pageTimer, laut: pageLaut, karten: pageKarten, sterne: pageSterne, fragen: pageFragen, medien: pageMedien, checkin: pageCheckin, strategien: pageStrategien, checkout: pageCheckout, markt: pageMarkt, klassen: pageKlassen, einstellungen: pageEinstellungen };
   const html = pages[rt.page](c);
   $('#page').innerHTML = html + (PAGE_AREA[rt.page] && !html.includes('<div class="empty">') ? `<div class="grid bmc-wrap">${beamerPanel(rt.page)}</div>` : '');
   const slot = $('[data-region="stage-preview"]');
   if (slot && rt.preview) { slot.appendChild(rt.preview.host); rt.preview.show(stageDesc()); }
   fillQr($('#page'));
+  renderDrawer();
   rt.liveCache = {};
   updateLive();
   pushState();
@@ -5500,6 +5639,10 @@ const actions = {
   },
   'bd-item-del': el => { const x = secOf(el.dataset.kind, el.dataset.sec); if (x) { x.items = x.items.filter(i => i.id !== el.dataset.item); commit(); } },
   'bd-reset': el => armed(el, () => resetBoard(el.dataset.kind)),
+  drawer: () => toggleDrawer(),
+  'dr-all': () => { rt.page = 'beamer'; rt.navOpen = null; renderAll(); window.scrollTo(0, 0); },
+  'dr-page': el => { if (!stagePage(+el.dataset.d)) toast('Hier gibt es nichts zum Blättern.'); },
+  'dr-f-add': el => { const f = newField(el.dataset.type, el.dataset.area || 'all'); store.fields.push(f); rt.fOpen = f.id; rt.page = 'beamer'; commit(); toast(`${fType(f.type)[1]} angelegt. Fülle es jetzt aus.`); const i = $(`.bf-editor [data-id="${f.id}"]`); if (i) { i.scrollIntoView({ block: 'center' }); i.focus({ preventScroll: true }); } },
   'part-toggle': el => {
     const a = el.dataset.area, k = el.dataset.key, p = store.parts;
     if (partOn(a, k)) { p[a] = p[a] || {}; p[a][k] = false; }
@@ -5717,6 +5860,18 @@ const changes = {
   'vocab-lang': el => { activeClass().vocab.lang = el.value; commit(); },
   'vocab-auto': el => { store.settings.vocabAuto = el.checked; commit(); },
   'vocab-email': el => { store.settings.vocabEmail = el.value.trim(); save(); },
+  'dr-stage': el => {
+    const v = el.value;
+    el.blur();
+    if (!v) { if (store.stage) { store.stage = null; send('event', { name: 'hide' }); commit(); } return; }
+    if (v === 'checkin' || v === 'checkout') showBoard(v);
+    else if (v === 'market') showMarket();
+    else if (v === 'question') showQuestion();
+    else if (v === 'groups') showGroups();
+    else if (v === 'challenge') showChallenge();
+    else if (v.startsWith('media:')) showMedia(v.slice(6));
+    else if (v.startsWith('field:')) showField(v.slice(6));
+  },
   'f-on': el => { const f = store.fields.find(x => x.id === el.dataset.id); if (f) { f.on = el.checked; commit(); if (el.checked && !fieldReady(f)) toast('Das Feld ist noch leer und erscheint erst, wenn es Inhalt hat.'); } },
   'f-edit': el => { const f = store.fields.find(x => x.id === el.dataset.id); if (f) { f[el.dataset.field] = el.dataset.field === 'url' ? el.value.trim() : el.value; commit(); } },
   'f-area': el => { const f = store.fields.find(x => x.id === el.dataset.id); if (f) { f.area = el.value; commit(); toast(`Das Feld erscheint jetzt: ${fAreaName(f.area)}.`); } },
@@ -5999,6 +6154,15 @@ function initDashboard() {
         <main class="page" id="page"></main>
       </div>
     </div>
+    <aside class="drawer" id="drawer" aria-label="Beamer-Zentrale" hidden>
+      <div class="dr-head"><div><h2>${icon('screen')}Beamer-Zentrale</h2><div class="dr-status"><span class="status" data-live="beamer-status"></span></div></div>
+        <button class="btn ghost icon-only" data-action="drawer" aria-label="Beamer-Zentrale schließen" title="Schließen (B)">×</button></div>
+      <div class="dr-live">
+        <div class="dr-preview" id="drPreview"></div>
+        <div class="row nowrap"><span class="muted small">Live-Vorschau: genau das sieht die Klasse</span><button class="btn small primary" data-action="open-beamer" data-live="beamer-btn">${icon('screen')}<span> Beamer öffnen</span></button></div>
+      </div>
+      <div class="dr-body" id="drBody"></div>
+    </aside>
     <dialog id="dlg" aria-label="Schüler:in"></dialog>
     <div class="toasts" id="toasts" aria-live="polite"></div>`;
 
@@ -6070,6 +6234,7 @@ function initDashboard() {
     if (e.metaKey || e.ctrlKey || e.altKey || $('#dlg').open || e.target.closest('input, textarea, select')) return;
     const key = e.key.toLowerCase();
     if (key === 'z') { e.preventDefault(); pickRandom(); }
+    else if (key === 'b') { e.preventDefault(); toggleDrawer(); }
     else if (key === ' ' && !e.target.closest('button, a, summary, label')) { e.preventDefault(); timerToggle(); }
     else if (key === 'q') { e.preventDefault(); drawQuestion(); }
     else if ((e.key === 'ArrowRight' || e.key === 'PageDown') && store.stage) { if (stagePage(1)) e.preventDefault(); }
@@ -6096,7 +6261,7 @@ function initDashboard() {
 /* ============================================================
    Beamer
    ============================================================ */
-const B = { dash: IS_BEAMER ? (location.hash.split('=')[1] || '') : '', dashAt: Date.now(), st: null, lastAt: 0, overlayTimer: 0, rollTimer: 0, goalKey: '', lastLight: 'off', vocabKey: '', vocabTop: '' };
+const B = { dash: IS_BEAMER ? (location.hash.split('=')[1] || '').split('&')[0] : '', dashAt: Date.now(), st: null, lastAt: 0, overlayTimer: 0, rollTimer: 0, goalKey: '', lastLight: 'off', vocabKey: '', vocabTop: '' };
 // Text nur neu setzen, wenn sich der Wert ändert
 function setText(id, str) {
   const el = $('#' + id);
@@ -6488,7 +6653,8 @@ function initBeamer() {
     else if (msg.type === 'event') handleEvent(msg.name, msg.data || {});
   });
   send('hello');
-  setInterval(() => send('ping'), 2000);
+  if (IS_PREVIEW) $('#bm').classList.add('is-preview');
+  else setInterval(() => send('ping'), 2000);
   setInterval(beamerTick, 200);
   beamerTick();
 
