@@ -936,7 +936,7 @@ dialog { border-radius: 12px; }
 }
 
 /* ---------- Beamer: Tafeln ---------- */
-.bm.board-on .bm-vocab:not(.is-focus), .bm.board-on .bm-ampel:not(.is-focus) { display: none !important; }
+.bm.board-on .bm-vocab:not(.is-focus) { display: none !important; }
 .bm.board-on .bm-main { grid-template-columns: minmax(0, 1fr) !important; }
 .bm-stage > .bm-board { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
 .bd { min-height: 100%; display: flex; flex-direction: column; gap: 2vmin; text-align: left; color: #1A1A1A; padding-bottom: 1vmin; }
@@ -1057,7 +1057,6 @@ dialog { border-radius: 12px; }
 .bi-ok { background: #14508C; border: .3vmin solid #14508C; color: #FFFFFF; }
 .two-in .field + .field { margin-top: 0; }
 /* Tafeln brauchen den Platz: Sterne-Leiste ausblenden, solange eine Tafel läuft */
-.bm.board-on .bm-bottom:not(.is-focus) { display: none !important; }
 
 .warn-dash { background: #944261; color: #FFFFFF; padding: 6px 12px; border-radius: 6px; font-size: 13.5px; font-weight: 600; line-height: 1.3; max-width: 260px; }
 /* ===================== Version 4: Lernstrategien, Text ===================== */
@@ -1403,6 +1402,17 @@ input.sw:focus-visible { outline: 3px solid #FAE561; outline-offset: 2px; }
 /* Vorschau im Beamer-Fenster: keine Bedienleiste, keine Hinweise */
 .bm.is-preview .bm-controls, .bm.is-preview .bm-hint { display: none !important; }
 @media (max-width: 1100px) { body.drawer-open .main { margin-right: 0; } .drawer { width: min(440px, 100vw); } }
+
+/* Version 15: Ampel und Sterne je Bereich */
+.bm.hp-board-ampel .bm-ampel:not(.is-focus), .bm.hp-board-stars .bm-bottom:not(.is-focus) { display: none !important; }
+.bm.hp-challenge-ampel .bm-ampel:not(.is-focus), .bm.hp-challenge-stars .bm-bottom:not(.is-focus) { display: none !important; }
+.bm.hp-groups-ampel .bm-ampel:not(.is-focus), .bm.hp-groups-stars .bm-bottom:not(.is-focus) { display: none !important; }
+.bm.hp-question-ampel .bm-ampel:not(.is-focus), .bm.hp-question-stars .bm-bottom:not(.is-focus) { display: none !important; }
+.bm.hp-market-ampel .bm-ampel:not(.is-focus), .bm.hp-market-stars .bm-bottom:not(.is-focus) { display: none !important; }
+.bm.hp-media-ampel .bm-ampel:not(.is-focus), .bm.hp-media-stars .bm-bottom:not(.is-focus) { display: none !important; }
+.bm.board-on .bm-ampel { align-self: center; zoom: .62; }
+.bm.board-on .bm-bottom:not(.is-focus) { zoom: .62; }
+
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -1994,12 +2004,13 @@ const PARTS = {
   kopf: { label: 'Kopfzeile und Uhr', items: [['klasse', 'Klassenname'], ['datum', 'Datum'], ['logo', 'Logo'], ['uhr', 'Große Uhr'], ['sek', 'Sekunden']] },
   timer: { label: 'Timer', items: [['label', 'Titel'], ['bar', 'Fortschrittsbalken'], ['state', 'Status']] },
   stars: { label: 'Sterne', items: [['star', 'Sternezahl'], ['goal', 'Klassenziel'], ['liga', 'Liga-Platz']] },
-  checkin: { label: 'Check-in', css: 'board', items: [['head', 'Überschrift'], ['intro', 'Hinweis zum Mitmachen'], ['hint', 'Leitfragen'], ['count', 'Stimmen und Durchschnitt'], ['add', 'Plus-Knöpfe zum Mitmachen']] },
-  checkout: { label: 'Check-out', css: 'board', items: [['head', 'Überschrift'], ['intro', 'Hinweis zum Mitmachen'], ['hint', 'Leitfragen'], ['count', 'Stimmen und Durchschnitt'], ['add', 'Plus-Knöpfe zum Mitmachen']] },
-  challenge: { label: 'Mini-Challenge', items: [['kicker', 'Kennzeichnung oben'], ['title', 'Titel'], ['level', 'Schwierigkeit'], ['min', 'Zeit'], ['done', 'Geschafft-Knopf'], ['mat', 'Material']] },
-  groups: { label: 'Gruppen', items: [['head', 'Überschrift'], ['count', 'Anzahl pro Gruppe']] },
-  question: { label: 'Zufallsfrage', items: [['badge', 'Kennzeichnung'], ['box', 'Name der Fragenbox']] },
-  market: { label: 'Sessionmarkt', items: [['head', 'Überschrift'], ['meta', 'Runde, Zeit und Raum'], ['by', 'Leitung'], ['count', 'Belegung']] },
+  checkin: { label: 'Check-in', css: 'board', items: [['head', 'Überschrift'], ['intro', 'Hinweis zum Mitmachen'], ['hint', 'Leitfragen'], ['count', 'Stimmen und Durchschnitt'], ['add', 'Plus-Knöpfe zum Mitmachen'], ['ampel', 'Ampel'], ['stars', 'Sterne-Leiste']] },
+  checkout: { label: 'Check-out', css: 'board', items: [['head', 'Überschrift'], ['intro', 'Hinweis zum Mitmachen'], ['hint', 'Leitfragen'], ['count', 'Stimmen und Durchschnitt'], ['add', 'Plus-Knöpfe zum Mitmachen'], ['ampel', 'Ampel'], ['stars', 'Sterne-Leiste']] },
+  challenge: { label: 'Mini-Challenge', items: [['kicker', 'Kennzeichnung oben'], ['title', 'Titel'], ['level', 'Schwierigkeit'], ['min', 'Zeit'], ['done', 'Geschafft-Knopf'], ['mat', 'Material'], ['ampel', 'Ampel'], ['stars', 'Sterne-Leiste']] },
+  groups: { label: 'Gruppen', items: [['head', 'Überschrift'], ['count', 'Anzahl pro Gruppe'], ['ampel', 'Ampel'], ['stars', 'Sterne-Leiste']] },
+  question: { label: 'Zufallsfrage', items: [['badge', 'Kennzeichnung'], ['box', 'Name der Fragenbox'], ['ampel', 'Ampel'], ['stars', 'Sterne-Leiste']] },
+  market: { label: 'Sessionmarkt', items: [['head', 'Überschrift'], ['meta', 'Runde, Zeit und Raum'], ['by', 'Leitung'], ['count', 'Belegung'], ['ampel', 'Ampel'], ['stars', 'Sterne-Leiste']] },
+  media: { label: 'Medien', items: [['ampel', 'Ampel'], ['stars', 'Sterne-Leiste']] },
 };
 // Wann ein eigenes Feld erscheint
 const F_AREAS = [['all', 'Immer'], ['clock', 'Nur bei Uhr und Timer'], ['checkin', 'Beim Check-in'], ['checkout', 'Beim Check-out'], ['challenge', 'Bei der Mini-Challenge'], ['groups', 'Bei den Gruppen'], ['question', 'Bei der Zufallsfrage'], ['market', 'Beim Sessionmarkt'], ['media', 'Bei Medien']];
@@ -2060,7 +2071,7 @@ function visibleFields() {
 }
 // Teile, die am Beamer gerade ausgeblendet sind, als CSS-Klassen
 function hiddenParts(st) {
-  const sd = st.stage, area = !sd ? 'clock' : sd.kind === 'board' ? sd.board : sd.kind;
+  const sd = st.stage, area = !sd ? 'clock' : sd.kind === 'board' ? sd.board : sd.kind === 'screen' ? 'media' : sd.kind;
   const out = [];
   ['kopf', 'timer', 'stars', area].forEach(a => {
     const P = PARTS[a], off = st.parts && st.parts[a];
@@ -4225,7 +4236,7 @@ function pageChallenge() {
 const PAGE_AREA = {
   unterricht: ['clock', ['kopf', 'timer', 'stars']], timer: ['clock', ['timer']], sterne: ['clock', ['stars']],
   checkin: ['checkin', ['checkin']], strategien: ['checkin', []], checkout: ['checkout', ['checkout']], challenge: ['challenge', ['challenge']],
-  gruppen: ['groups', ['groups']], fragen: ['question', ['question']], markt: ['market', ['market']], medien: ['media', []],
+  gruppen: ['groups', ['groups']], fragen: ['question', ['question']], markt: ['market', ['market']], medien: ['media', ['media']],
 };
 function partsHTML(areas) {
   return areas.map(a => `<div class="bmc-part"><span class="bmc-part-label">${PARTS[a].label}</span><div class="row chips">${PARTS[a].items.map(([k, l]) => {
@@ -5357,7 +5368,7 @@ function pageEinstellungen() {
       <p class="muted small">Mit Adresse gibt es im Check-in und Check-out den Knopf <strong>GoPilot-QR</strong>. Der QR-Code öffnet bei den SuS einen vorausgefüllten Eintrag in ihrem GoPilot-Portfolio: die Lernstrategie des Tages oder einen Lerntagebuch-Eintrag mit den Check-out-Fragen. Der Code enthält nur einen Link, es werden keine Daten aus dem Teaching Assistant übertragen. Leer lassen schaltet die Funktion aus.</p>
     </section>
     <section class="panel s6">
-      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 14</span></div>
+      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 15</span></div>
       <dl class="about">
         <dt>Idee und Grundlage</dt><dd><a href="https://classtiles.de" target="_blank" rel="noopener">classtiles.de</a></dd>
         <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Beamer-Zentrale, Menü mit Untermenüs, Gruppengenerator, Mini-Challenge mit H5P, Beamer individuell mit eigenen Feldern, Beamer-Zentrale mit Live-Vorschau, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
