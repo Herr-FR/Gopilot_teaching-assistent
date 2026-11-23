@@ -1414,6 +1414,65 @@ input.sw:focus-visible { outline: 3px solid #FAE561; outline-offset: 2px; }
 .bm.board-on .bm-bottom:not(.is-focus) { zoom: .62; }
 
 
+/* ===================== Version 16: einfachere Bedienung ===================== */
+/* Schalter „Am Beamer zeigen“ im Seitenkopf */
+.bt { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.bt .btn .ic { width: 18px; height: 18px; }
+.bt .bt-on { background: #FAE561; color: #14508C; border-color: #FAE561; font-weight: 700; }
+.bt .bt-on:hover { border-color: #14508C; }
+.bt-state { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); }
+.bt.on .bt-state { color: var(--text); font-weight: 600; }
+.dot.live { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #2E8B57; box-shadow: 0 0 0 3px rgba(46, 139, 87, .2); animation: livepulse 1.6s ease-in-out infinite; }
+@keyframes livepulse { 50% { box-shadow: 0 0 0 6px rgba(46, 139, 87, .08); } }
+.q-bt { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.q-bt .bt { flex-direction: row; align-items: center; justify-content: flex-start; flex-wrap: wrap; }
+.q-bt .btn.lg { padding: 8px 14px; font-size: 15px; }
+/* Schnellstart */
+.qs .panel-head h2 { font-size: 17px; }
+.qs-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.qs-steps li { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--field); }
+.qs-steps li > div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.qs-steps li .btn { align-self: center; flex: none; }
+.qs-n { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #14508C; color: #FFFFFF; font-weight: 700; }
+.qs-steps li.done { opacity: .75; }
+.qs-steps li.done .qs-n { background: #2E8B57; }
+.qs-n .ic { width: 16px; height: 16px; }
+@media (max-width: 1100px) { .qs-steps { grid-template-columns: minmax(0, 1fr); } }
+/* Aufklappbares „Am Beamer anpassen“ */
+details.bmc-fold { padding-bottom: 0; }
+details.bmc-fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; }
+details.bmc-fold > summary::-webkit-details-marker { display: none; }
+details.bmc-fold .bmc-sum { margin-left: auto; font-size: 13px; color: #E8F2FB; }
+details.bmc-fold .bmc-chev .ic { width: 18px; height: 18px; color: #FFFFFF; transition: transform .15s; }
+details.bmc-fold[open] .bmc-chev .ic { transform: rotate(180deg); }
+details.bmc-fold:not([open]) > summary { margin-bottom: 0; }
+details.bmc-fold[open] { padding-bottom: 22px; }
+.bmc-when { margin-top: 4px; }
+/* Bereich Beamer: Standardteile als Liste zum Aufklappen */
+.bmc-acc { border-bottom: 1px solid var(--border); }
+.bmc-acc > summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 10px 2px; cursor: pointer; }
+.bmc-acc > summary::-webkit-details-marker { display: none; }
+.bmc-acc > summary strong { flex: 1; }
+.bmc-acc > summary .ic { width: 16px; height: 16px; color: var(--text-2); transition: transform .15s; }
+.bmc-acc[open] > summary .ic { transform: rotate(180deg); }
+.bmc-acc .bmc-part { padding: 0 0 12px; }
+/* Hilfe */
+.help-keys { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 8px; }
+.help-keys li { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 12px; }
+.help-keys kbd { display: inline-block; min-width: 26px; padding: 3px 8px; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 6px; font: inherit; font-size: 13px; font-weight: 700; text-align: center; background: var(--field); }
+.help-tips { margin: 6px 0 16px; padding-left: 20px; display: grid; gap: 6px; }
+.dlg-body.help h3 { margin: 18px 0 6px; font-size: 15px; }
+/* Formulare luftiger, Bibliothek der Mini-Challenge bricht um */
+.ch-editor .field, .bf-editor .field { margin-bottom: 14px; }
+.ch-lib li { flex-wrap: wrap; }
+.ch-lib-main { flex-basis: 180px; }
+details.panel.bmc-fold:not([open]) { padding-bottom: 0 !important; }
+details.panel.bmc-fold > summary.panel-head { margin-bottom: 0; }
+details.panel.bmc-fold[open] > summary.panel-head { margin-bottom: 16px; }
+.dr-live-btns { margin-top: 8px; gap: 6px; }
+.dr-live-btns .btn .ic { width: 15px; height: 15px; }
+.q-bt { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -1942,7 +2001,7 @@ function normChallenges(ch) {
   ch = ch && typeof ch === 'object' ? ch : null;
   if (!ch) {
     const items = [
-      newChallenge({ title: 'Fehlerdetektiv', task: 'Im Material steckt ein Fehler. Finde ihn und erkläre in einem Satz, warum es ein Fehler ist.', level: 'mittel', minutes: 5, solution: 'Hier steht die Auflösung. Du deckst sie unter Beamer auf.' }),
+      newChallenge({ title: 'Fehlerdetektiv', task: 'Im Material steckt ein Fehler. Finde ihn und erkläre in einem Satz, warum es ein Fehler ist.', level: 'mittel', minutes: 5, solution: 'Hier steht die Auflösung. Du deckst sie in der Beamer-Zentrale auf.' }),
       newChallenge({ title: 'In 30 Sekunden erklärt', task: 'Erkläre deiner Nachbarin oder deinem Nachbarn den wichtigsten Begriff von heute in 30 Sekunden, ohne das Wort selbst zu benutzen.', level: 'leicht', minutes: 3 }),
       newChallenge({ title: 'Transfer-Challenge', task: 'Finde ein Beispiel aus deinem Alltag oder deinem Betrieb, in dem das Thema von heute eine Rolle spielt. Notiere es in zwei Sätzen.', level: 'knifflig', minutes: 5 }),
     ];
@@ -3309,7 +3368,7 @@ async function addFiles(files, quiet = false) {
   if (!added) return [];
   commit();
   const temp = store.media.slice(0, added).some(m => m.temp);
-  if (!quiet) toast(`${added} ${added === 1 ? 'Datei' : 'Dateien'} gespeichert${temp ? ', aber nur bis zum Schließen, weil der Browser keinen Speicher erlaubt' : ''}. Zeigen kannst du sie unter Beamer.`);
+  if (!quiet) toast(`${added} ${added === 1 ? 'Datei' : 'Dateien'} gespeichert${temp ? ', aber nur bis zum Schließen, weil der Browser keinen Speicher erlaubt' : ''}. Zeigen kannst du sie in der Beamer-Zentrale.`);
   return store.media.slice(0, added);
 }
 function addWeb(raw, title = '') {
@@ -3502,7 +3561,7 @@ const DEMO_QUESTIONS = [
 
 // Kleiner Hinweis, ob etwas gerade am Beamer zu sehen ist, mit Sprung in den Bereich Beamer
 function beamerLink(on, label) {
-  return `<button class="btn ghost small bm-link ${on ? 'on' : ''}" data-action="nav" data-page="beamer" title="Was am Beamer erscheint, legst du im Bereich Beamer fest">${icon('screen')}${label || (on ? 'Am Beamer sichtbar' : 'Nicht am Beamer')}</button>`;
+  return `<button class="btn ghost small bm-link ${on ? 'on' : ''}" data-action="drawer" title="In der Beamer-Zentrale steuern">${icon('screen')}${label || (on ? 'Am Beamer sichtbar' : 'Nicht am Beamer')}</button>`;
 }
 function focusBtn(target) {
   const on = store.focus === target;
@@ -4130,8 +4189,8 @@ function pageGruppen(c) {
   const drop = (gid, inner, empty) => `<div class="gr-drop ${rt.grSel ? 'armed' : ''}" data-action="gr-drop" data-gid="${gid}">${inner || `<span class="gr-empty">${empty}</span>`}</div>`;
   const on = groupsOn();
   return `
-  <div class="page-head"><div><h1>Gruppen</h1><p class="lead">Teile ${esc(c.name)} zufällig oder von Hand in Gruppen ein, in jeder Größe. Ziehe einen Namen in eine andere Gruppe oder tippe erst auf den Namen und dann auf die Zielgruppe. Am Beamer zeigst du die Gruppen unter Beamer.</p></div>
-    <div class="row">${beamerLink(on)}</div>
+  <div class="page-head"><div><h1>Gruppen</h1><p class="lead">Teile ${esc(c.name)} zufällig oder von Hand in Gruppen ein, in jeder Größe. Ziehe einen Namen in eine andere Gruppe oder tippe erst auf den Namen und dann auf die Zielgruppe. Mit „Am Beamer zeigen“ oben rechts erscheinen sie groß.</p></div>
+    <div class="row">${beamerToggle('groups')}</div>
   </div>
   <div class="grid">
     <section class="panel s12">
@@ -4205,8 +4264,8 @@ function pageChallenge() {
         <span class="muted small">Am Touch-Display tippen die SuS selbst auf „Geschafft“.</span></div></div>
     </section>`;
   return `
-  <div class="page-head"><div><h1>Mini-Challenge des Tages</h1><p class="lead">Eine kurze Aufgabe zum Abschluss der Stunde, mit Zeit, Schwierigkeit und Material. Bilder, PDFs, HTML-Seiten und H5P-Aktivitäten erscheinen direkt neben der Aufgabe, an einem Touch-Display bearbeiten die SuS sie dort selbst. Am Beamer zeigst du die Challenge unter Beamer.</p></div>
-    <div class="row">${beamerLink(on)}</div>
+  <div class="page-head"><div><h1>Mini-Challenge des Tages</h1><p class="lead">Eine kurze Aufgabe zum Abschluss der Stunde, mit Zeit, Schwierigkeit und Material. Bilder, PDFs, HTML-Seiten und H5P-Aktivitäten erscheinen direkt neben der Aufgabe, an einem Touch-Display bearbeiten die SuS sie dort selbst. Mit „Am Beamer zeigen“ oben rechts erscheint sie groß.</p></div>
+    <div class="row">${beamerToggle('challenge')}</div>
   </div>
   <div class="grid">
     ${editor}
@@ -4289,8 +4348,10 @@ function beamerPanel(page) {
   const [area, parts] = PAGE_AREA[page];
   const list = store.fields.filter(f => f.area === area || (area === 'clock' && f.area === 'all'));
   const others = store.fields.filter(f => f.area === 'all' && area !== 'clock' && f.on).length;
-  return `<section class="panel s12 bmc">
-    <div class="panel-head"><h2>${icon('screen')}Am Beamer zeigen</h2><span class="muted small">${area === 'clock' ? 'Gilt immer bzw. wenn nur Uhr und Timer laufen' : `Gilt, wenn ${esc(fAreaName(area).replace(/^(Beim|Bei der|Bei den|Bei) /, ''))} am Beamer läuft`}</span></div>
+  const open = rt.bmcOpen === page || (rt.fOpen && list.some(f => f.id === rt.fOpen));
+  return `<details class="panel s12 bmc bmc-fold" data-bmc="${page}" ${open ? 'open' : ''}>
+    <summary class="panel-head"><h2>${icon('screen')}Am Beamer anpassen</h2><span class="bmc-sum">${esc(bmcSummary(page))}</span><span class="bmc-chev">${icon('down')}</span></summary>
+    <p class="muted small bmc-p bmc-when">${area === 'clock' ? 'Gilt immer bzw. wenn nur Uhr und Timer laufen.' : `Gilt, wenn ${esc(fAreaName(area).replace(/^(Beim|Bei der|Bei den|Bei) /, ''))} am Beamer läuft.`}</p>
     <div class="bmc-grid ${parts.length ? '' : 'one'}">
       ${parts.length ? `<div><h3 class="bmc-h">Standardteile</h3><p class="muted small bmc-p">Alles ist zunächst sichtbar. Tippe auf einen Teil, um ihn am Beamer aus- oder wieder einzublenden.</p>${partsHTML(parts)}
         ${parts.some(a => store.parts[a]) ? `<button class="btn ghost small" data-action="part-reset" data-areas="${parts.join(',')}">Alles wieder zeigen</button>` : ''}</div>` : ''}
@@ -4301,7 +4362,7 @@ function beamerPanel(page) {
         ${fieldAddRow(area === 'clock' ? 'all' : area)}
       </div>
     </div>
-  </section>`;
+  </details>`;
 }
 // Im Bereich Beamer: alle eigenen Felder und alle Teile
 function beamerCustomPanels() {
@@ -4315,7 +4376,10 @@ function beamerCustomPanels() {
     <section class="panel s5 bmc">
       <div class="panel-head"><h2>Standardteile</h2>${Object.keys(store.parts).length ? '<button class="btn ghost small" data-action="part-reset" data-areas="">Alles zeigen</button>' : ''}</div>
       <p class="muted small bmc-p">Alles ist zunächst sichtbar. Tippe auf einen Teil, um ihn am Beamer aus- oder einzublenden. Die Teile eines Bereichs gelten, wenn er auf der Hauptfläche läuft.</p>
-      ${partsHTML(Object.keys(PARTS))}
+      ${Object.keys(PARTS).map(a => {
+        const n = Object.keys(store.parts[a] || {}).length, open = rt.accOpen && rt.accOpen[a];
+        return `<details class="bmc-acc" data-acc="${a}" ${open ? 'open' : ''}><summary><strong>${PARTS[a].label}</strong><span class="muted small">${n ? `${n} ausgeblendet` : 'alles sichtbar'}</span>${icon('down')}</summary>${partsHTML([a]).replace('<span class="bmc-part-label">' + PARTS[a].label + '</span>', '')}</details>`;
+      }).join('')}
     </section>`;
 }
 /* ---------- Beamer-Zentrale: von überall erreichbar, mit Live-Vorschau ---------- */
@@ -4333,6 +4397,22 @@ function stageOptions() {
   const o = ([v, l]) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(l)}</option>`;
   return opts.map(o).join('') + (media.length ? `<optgroup label="Medien">${media.map(o).join('')}</optgroup>` : '') + (fields.length ? `<optgroup label="Eigene Felder">${fields.map(o).join('')}</optgroup>` : '');
 }
+// Knöpfe für den Inhalt, der gerade läuft
+function drLive(d) {
+  if (!d) return '';
+  const b = [];
+  if (d.kind === 'question') {
+    b.push(`<button class="btn small" data-action="q-draw">${icon('question')}Nächste Frage</button>`);
+    if (d.a) b.push(`<button class="btn small ${d.showAnswer ? 'primary' : ''}" data-action="q-answer">${icon(d.showAnswer ? 'eyeoff' : 'eye')}${d.showAnswer ? 'Antwort verbergen' : 'Antwort aufdecken'}</button>`);
+  }
+  if (d.kind === 'challenge') {
+    if (d.hasSolution) b.push(`<button class="btn small ${store.challenges.solution ? 'primary' : ''}" data-action="ch-solution">${icon(store.challenges.solution ? 'eyeoff' : 'eye')}${store.challenges.solution ? 'Auflösung verbergen' : 'Auflösung aufdecken'}</button>`);
+    if (d.minutes) b.push(`<button class="btn small" data-action="ch-timer">${icon('timer')}Timer ${d.minutes} Min.</button>`);
+  }
+  if (d.kind === 'groups') b.push(`<button class="btn small" data-action="gr-random">${icon('dice')}Neu mischen</button>`);
+  if (d.kind === 'board') boardOf(d.board).sections.filter(x => x.on && x.type === 'scale').forEach(x => b.push(`<button class="btn small ${x.hide ? 'primary' : ''}" data-action="bd-hide-toggle" data-kind="${d.board}" data-sec="${x.id}">${icon(x.hide ? 'eye' : 'eyeoff')}${x.hide ? 'Ergebnis aufdecken' : 'Ergebnis verdecken'}</button>`));
+  return b.length ? `<div class="row dr-live-btns">${b.join('')}</div>` : '';
+}
 function drRow(label, sub, input) {
   return `<label class="dr-row"><span><strong>${label}</strong>${sub ? `<span class="muted small">${sub}</span>` : ''}</span>${input}</label>`;
 }
@@ -4347,6 +4427,7 @@ function drawerHTML() {
       <h3>Hauptfläche</h3>
       <div class="row nowrap"><select class="input" data-change="dr-stage" aria-label="Was auf der Hauptfläche läuft">${stageOptions()}</select>
         ${store.stage ? '<button class="btn small" data-action="stage-hide">Ausblenden</button>' : ''}</div>
+      ${drLive(d)}
       ${pageable ? `<div class="row nowrap dr-page"><button class="btn small" data-action="dr-page" data-d="-1">${icon('left')}Zurück</button><button class="btn small" data-action="dr-page" data-d="1">Weiter${icon('right')}</button><span class="muted small">auch mit Pfeiltasten oder Presenter</span></div>` : ''}
     </section>
     <section class="dr-sec">
@@ -4410,6 +4491,73 @@ function toggleDrawer(force) {
   try { localStorage.setItem('mmbbs-ta-drawer', rt.drawer ? '1' : ''); } catch (e) { /* ohne Speicher */ }
   renderAll();
 }
+/* ---------- Benutzerfreundlichkeit: An/Aus am Seitenkopf, Schnellstart, Hilfe ---------- */
+const BT = {
+  checkin: { on: () => boardOn('checkin'), show: () => showBoard('checkin'), label: 'den Check-in' },
+  checkout: { on: () => boardOn('checkout'), show: () => showBoard('checkout'), label: 'den Check-out' },
+  challenge: { on: () => challengeOn(), show: () => showChallenge(), label: 'die Mini-Challenge', ok: () => !!curChallenge() },
+  groups: { on: () => groupsOn(), show: () => showGroups(), label: 'die Gruppen', ok: () => !!(activeClass() && activeClass().groups.list.length) },
+  market: { on: () => !!store.stage && store.stage.kind === 'market', show: () => showMarket(), label: 'den Sessionmarkt', ok: () => store.market.sessions.length > 0 },
+  question: { on: () => questionOn(), show: () => showQuestion(), label: 'die Zufallsfrage', ok: () => store.qboxes.some(b => b.items.length) },
+};
+// Großer Schalter im Seitenkopf: zeigt den Inhalt dieser Seite am Beamer oder nimmt ihn herunter
+function beamerToggle(kind) {
+  const k = BT[kind], on = k.on(), ok = !k.ok || k.ok();
+  return `<div class="bt ${on ? 'on' : ''}">
+    <button class="btn lg ${on ? 'bt-on' : 'primary'}" data-action="bt-toggle" data-kind="${kind}" ${ok || on ? '' : 'disabled'} aria-pressed="${on}">
+      ${icon(on ? 'eyeoff' : 'screen')}${on ? 'Vom Beamer nehmen' : 'Am Beamer zeigen'}</button>
+    <span class="bt-state">${on ? '<i class="dot live"></i>Läuft gerade am Beamer' : ok ? 'Noch nicht am Beamer' : 'Erst Inhalte anlegen'}</span>
+  </div>`;
+}
+function quickStart(c) {
+  if (store.settings.qsDone) return '';
+  const connected = Date.now() - rt.lastPing < 5000, shown = !!store.stage;
+  const step = (done, n, title, text, btn) => `<li class="${done ? 'done' : ''}"><span class="qs-n">${done ? icon('check') : n}</span><div><strong>${title}</strong><span class="muted small">${text}</span></div>${done ? '' : btn}</li>`;
+  return `<section class="panel s12 qs">
+    <div class="panel-head"><h2>So startest du in drei Schritten</h2><button class="btn ghost small" data-action="qs-hide">Nicht mehr zeigen</button></div>
+    <ol class="qs-steps">
+      ${step(true, 1, 'Klasse wählen', `${esc(c.name)} ist aktiv. Weitere Klassen legst du unter Klassen an.`, '')}
+      ${step(connected, 2, 'Beamer-Fenster öffnen', 'Das Fenster auf den Beamer ziehen und dort F für Vollbild drücken.', '<button class="btn small primary" data-action="open-beamer">Beamer öffnen</button>')}
+      ${step(shown, 3, 'Etwas zeigen', 'In der Beamer-Zentrale wählst du, was die Klasse sieht, z. B. den Check-in.', '<button class="btn small" data-action="drawer">Beamer-Zentrale</button>')}
+    </ol>
+  </section>`;
+}
+function helpHTML() {
+  const k = (keys, text) => `<li><span class="keys">${keys.map(x => `<kbd>${x}</kbd>`).join(' ')}</span><span>${text}</span></li>`;
+  return `<div class="dlg-head"><div><h2 class="dlg-title">Hilfe und Tastenkürzel</h2><p class="muted small">Die Kürzel gelten im Dashboard und im Beamer-Fenster, solange du nicht in einem Textfeld tippst.</p></div>
+      <button class="iconbtn" data-action="dlg-close" aria-label="Schließen">×</button></div>
+    <ul class="help-keys">
+      ${k(['B'], 'Beamer-Zentrale öffnen und schließen')}
+      ${k(['Leertaste'], 'Timer starten oder pausieren')}
+      ${k(['Z'], 'Zufallsnamen ziehen')}
+      ${k(['Q'], 'Zufallsfrage ziehen')}
+      ${k(['←', '→'], 'Am Beamer blättern (auch mit Presenter)')}
+      ${k(['F'], 'Vollbild im Beamer-Fenster')}
+      ${k(['Esc'], 'Fokus oder Einblendung beenden')}
+      ${k(['?'], 'Diese Hilfe')}
+    </ul>
+    <h3>Gut zu wissen</h3>
+    <ul class="help-tips">
+      <li><strong>Unterricht</strong> ist deine Startseite: Namen ziehen, Timer, Ampel, Sterne und Karten.</li>
+      <li><strong>Am Beamer zeigen</strong> oben auf den Seiten Check-in, Check-out, Mini-Challenge, Gruppen, Zufallsfragen und Sessionmarkt bringt den Inhalt mit einem Klick an den Beamer.</li>
+      <li>Die <strong>Beamer-Zentrale</strong> oben rechts zeigt eine Live-Vorschau und alles, was gerade zu sehen ist.</li>
+      <li>Alle Daten bleiben in diesem Browser. Sichere sie unter Einstellungen mit <strong>Backup speichern</strong>.</li>
+    </ul>
+    <div class="row"><button class="btn" data-action="qs-show">Schnellstart wieder zeigen</button><button class="btn primary" data-action="dlg-close">Alles klar</button></div>`;
+}
+function openHelp() {
+  const dlg = $('#dlg');
+  rt.dlgStudent = null;
+  dlg.innerHTML = `<div class="dlg-body help">${helpHTML()}</div>`;
+  if (!dlg.open) dlg.showModal();
+}
+function bmcSummary(page) {
+  const [area, parts] = PAGE_AREA[page];
+  const hidden = parts.reduce((n, a) => n + Object.keys(store.parts[a] || {}).length, 0);
+  const fields = store.fields.filter(f => (f.area === area || (area === 'clock' && f.area === 'all')) && f.on).length;
+  const bits = [hidden ? `${hidden} ${hidden === 1 ? 'Teil' : 'Teile'} ausgeblendet` : 'Standard', fields ? `${fields} ${fields === 1 ? 'eigenes Feld' : 'eigene Felder'}` : ''].filter(Boolean);
+  return bits.join(' · ');
+}
 
 /* ---------- Beamer: alles, was am Beamer erscheint, an einer Stelle ---------- */
 function beamerInfoPanel(span) {
@@ -4438,7 +4586,7 @@ function pageBeamer(c) {
   const avail = { stage: !!stageDesc(), timer: bm.timer, clock: true, ampel: bm.ampel && rt.noise.source !== 'off', stars: bm.stars && !!c, message: bm.message && !!store.message.trim() };
   const liga = ligaRows();
   return `
-  <div class="page-head"><div><h1>Beamer</h1><p class="lead">Alle Einstellungen für den Beamer. Was gerade zu sehen ist, steuerst du von überall aus mit der <button class="linkbtn" data-action="drawer">Beamer-Zentrale</button> oben rechts (Taste B), mit Live-Vorschau. Hier legst du fest, was am Beamer zu sehen ist: was groß auf der Hauptfläche läuft, was zusätzlich eingeblendet wird und was im Fokus steht. In allen anderen Bereichen bereitest du Inhalte nur vor.</p></div>
+  <div class="page-head"><div><h1>Beamer</h1><p class="lead">Alle Einstellungen für den Beamer an einem Ort. Für schnelle Wechsel während der Stunde nutzt du die <button class="linkbtn" data-action="drawer">Beamer-Zentrale</button> mit Live-Vorschau (Taste B).</p></div>
     <div class="row"><div class="status" data-live="beamer-status"></div><button class="btn primary lg" data-action="open-beamer" data-live="beamer-btn">${icon('screen')}<span> Beamer-Fenster öffnen</span></button></div>
   </div>
   <div class="grid">
@@ -4495,7 +4643,7 @@ function pageBeamer(c) {
       <div class="setting"><span>Namen</span>${seg('set', [['auto', 'Automatisch'], ['first', 'Nur Vorname'], ['full', 'Vor- und Nachname']], st.nameMode, 'data-key="nameMode"')}
         <span class="muted small">Automatisch zeigt den Vornamen und hängt den ersten Buchstaben des Nachnamens an, wenn ein Vorname doppelt vorkommt.</span></div>
     </section>
-    <section class="panel s6">
+    <section class="panel s6 setup-help">
       <div class="panel-head"><h2>So richtest du den Beamer ein</h2></div>
       <ol class="guide">
         <li>Klicke oben auf „Beamer-Fenster öffnen“. Es öffnet sich ein zweites Fenster.</li>
@@ -4568,6 +4716,7 @@ function pageUnterricht(c) {
   return `
   <div class="page-head"><div><h1>Unterricht</h1><p class="lead">${esc(c.name)} mit ${c.students.length} SuS${absent ? `, davon ${absent} heute abwesend` : ''}</p></div></div>
   <div class="grid">
+    ${quickStart(c)}
     ${pickPanel(c, 's5')}
     ${timerPanel('s7')}
     <section class="panel s12 as-panel">
@@ -4673,7 +4822,7 @@ function pageLaut() {
         <li>Zeigt die Ampel ständig Rot, senke die Empfindlichkeit oder miss den Grundpegel neu.</li>
         <li>Ohne Mikrofon kannst du die Ampel im Modus Manuell selbst schalten. Die Sterne zählen trotzdem.</li>
       </ul>
-      <p class="muted small">Ob Ampel und Pegelbalken am Beamer erscheinen, legst du unter Beamer fest.</p>
+      <p class="muted small">Ob Ampel und Pegelbalken am Beamer erscheinen, legst du in der Beamer-Zentrale fest.</p>
     </section>
     <section class="panel s12">
       <details class="diag" data-diag ${rt.diagOpen ? 'open' : ''}><summary>Mikrofon-Diagnose</summary>
@@ -4692,7 +4841,7 @@ function pageKarten(c) {
   const cell = v => v ? v : '<span class="zero">0</span>';
   return `
   <div class="page-head">
-    <div><h1>Karten</h1><p class="lead">Lob, gelbe und rote Karten mit Notizen für ${esc(c.name)}. Notizen erscheinen nie am Beamer. Welche Farben am Beamer erscheinen, legst du unter Beamer fest.</p>${beamerLink(false, 'Am Beamer: ' + cardBeamerText())}</div>
+    <div><h1>Karten</h1><p class="lead">Lob, gelbe und rote Karten mit Notizen für ${esc(c.name)}. Notizen erscheinen nie am Beamer. Welche Farben am Beamer erscheinen, legst du in der Beamer-Zentrale fest.</p>${beamerLink(false, 'Am Beamer: ' + cardBeamerText())}</div>
     <div class="row">${seg('card-range', [['today', 'Heute'], ['week', 'Diese Woche'], ['all', 'Alle']], range)}<button class="btn" data-action="cards-export" ${log.length ? '' : 'disabled'}>Als CSV exportieren</button></div>
   </div>
   <div class="grid">
@@ -4750,7 +4899,7 @@ function pageSterne(c) {
       <p class="muted small">Rot zählt nur, wenn es länger laut bleibt. Die Geduld stellst du unter Lautstärke ein.</p>
     </section>
     <section class="panel s5">
-      <div class="panel-head"><h2>Klassen-Liga</h2>${liga.length > 1 ? beamerLink(false, 'Einblenden unter Beamer') : ''}</div>
+      <div class="panel-head"><h2>Klassen-Liga</h2>${liga.length > 1 ? `<button class="btn small" data-action="liga-show">${icon('screen')}Am Beamer einblenden</button>` : ''}</div>
       ${liga.length > 1 ? `
         ${seg('set', [['stars', 'Sterne'], ['rate', 'Pro 45 Minuten']], st.ligaMode, 'data-key="ligaMode"')}
         <table class="tbl" style="margin-top:12px"><thead><tr><th>Platz</th><th>Klasse</th><th class="num">Sterne</th><th class="num">je 45 Min.</th></tr></thead>
@@ -4863,8 +5012,8 @@ function questionPanel(span, big = false) {
       ${q && q.a ? `<div class="q-ans"><span>Antwort${on && store.qcur.showAnswer ? ', am Beamer sichtbar' : ', nur für dich'}</span>${esc(q.a)}</div>` : ''}
       <div class="row">
         <button class="btn primary ${big ? 'lg' : ''}" data-action="q-draw" ${b && b.items.length ? '' : 'disabled'}>${icon('question')}Frage ziehen <kbd>Q</kbd></button>
-        ${beamerLink(on)}
-      </div>`;
+      </div>
+      <div class="q-bt">${beamerToggle('question')}${on && q && q.a ? `<button class="btn" data-action="q-answer">${icon(store.qcur.showAnswer ? 'eyeoff' : 'eye')}${store.qcur.showAnswer ? 'Antwort verbergen' : 'Antwort am Beamer aufdecken'}</button>` : ''}</div>`;
   }
   return `<section class="panel ${span} qpanel">
     <div class="panel-head"><h2>Zufallsfrage</h2><div class="row">${left}</div></div>
@@ -4995,7 +5144,7 @@ function mediaRow(m) {
 function pageMedien() {
   const items = [...store.media].sort((a, b) => b.t - a.t);
   return `
-  <div class="page-head"><div><h1>Medien</h1><p class="lead">Sammle Webseiten, PDFs, Bilder, Word-Dateien, Videos und Texte in deiner Bibliothek. Zeigen, blättern, zoomen und ausblenden steuerst du unter Beamer.</p></div></div>
+  <div class="page-head"><div><h1>Medien</h1><p class="lead">Sammle Webseiten, PDFs, Bilder, Word-Dateien, Videos und Texte in deiner Bibliothek. Zeigen und blättern steuerst du in der Beamer-Zentrale (Taste B).</p></div></div>
   <div class="grid">
     <section class="panel s5">
       <div class="panel-head"><h2>Hinzufügen</h2></div>
@@ -5026,7 +5175,7 @@ function pageMedien() {
 function pageFragen() {
   const b = activeBox();
   return `
-  <div class="page-head"><div><h1>Zufallsfragen</h1><p class="lead">Sammle Fragen in Fragenboxen, zum Beispiel zur Wiederholung oder als Einstieg. Per Knopfdruck ziehst du eine Zufallsfrage. Ob sie und ihre Antwort am Beamer erscheinen, legst du unter Beamer fest. Die Antwort zeigst du erst, wenn du willst.</p></div></div>
+  <div class="page-head"><div><h1>Zufallsfragen</h1><p class="lead">Sammle Fragen in Fragenboxen, zum Beispiel zur Wiederholung oder als Einstieg. Per Knopfdruck ziehst du eine Zufallsfrage. Mit „Am Beamer zeigen“ erscheint sie groß, die Antwort deckst du danach auf. Die Antwort zeigst du erst, wenn du willst.</p></div></div>
   <div class="grid">
     ${questionPanel('s7', true)}
     <section class="panel s5">
@@ -5091,8 +5240,8 @@ function ensureStratSection() {
   return x;
 }
 const BOARD_LEAD = {
-  checkin: 'Starte gemeinsam in die Stunde: Stimmung abfragen, die Lernstrategie des Tages vorstellen, Erwartungen sammeln und den Plan für heute zeigen. Hier stellst du die Bereiche ein und fügst neue hinzu. Ob und wie der Check-in am Beamer erscheint, legst du unter Beamer fest.',
-  checkout: 'Schließe die Stunde gemeinsam ab: Zufriedenheit, Lichtblicke, drei Reflexionsfragen, nächste Schritte und eine Abschlussumfrage per QR-Code. Hier stellst du die Bereiche ein und fügst neue hinzu. Ob und wie der Check-out am Beamer erscheint, legst du unter Beamer fest.',
+  checkin: 'Starte gemeinsam in die Stunde: Stimmung abfragen, die Lernstrategie des Tages vorstellen, Erwartungen sammeln und den Plan für heute zeigen. Hier stellst du die Bereiche ein und fügst neue hinzu. Mit „Am Beamer zeigen“ oben rechts holst du ihn an den Beamer.',
+  checkout: 'Schließe die Stunde gemeinsam ab: Zufriedenheit, Lichtblicke, drei Reflexionsfragen, nächste Schritte und eine Abschlussumfrage per QR-Code. Hier stellst du die Bereiche ein und fügst neue hinzu. Mit „Am Beamer zeigen“ oben rechts holst du ihn an den Beamer.',
 };
 function boardDesc(kind) {
   const c = activeClass(), b = boardOf(kind);
@@ -5151,7 +5300,7 @@ function secEditor(x, kind) {
     const k = curChallenge();
     body = `${edit('q', 'Überschrift')}
       ${k ? `<div class="strat-preview"><strong>${esc(k.title)}</strong><p>${esc(k.task)}</p></div>` : '<p class="muted small" style="margin-top:10px">Noch keine Mini-Challenge gewählt.</p>'}
-      <p class="muted small" style="margin-top:10px">Aufgabe, Material und Lösung stellst du unter Mini-Challenge ein. In der Übersicht erscheint hier nur die Aufgabe, mit Material zeigst du sie unter Beamer.</p>
+      <p class="muted small" style="margin-top:10px">Aufgabe, Material und Lösung stellst du unter Mini-Challenge ein. In der Übersicht erscheint hier nur die Aufgabe, mit Material zeigst du sie auf der Seite Mini-Challenge über „Am Beamer zeigen“.</p>
       <div class="row"><button class="btn small" data-action="nav" data-page="challenge">${icon('bolt')}Mini-Challenge bearbeiten</button></div>`;
   } else if (x.type === 'strategy') {
     const s = stratOf(x.sid), st = store.strats;
@@ -5187,7 +5336,7 @@ function pageBoard(kind) {
   const b = boardOf(kind), on = boardOn(kind), hasStrat = b.sections.some(x => x.type === 'strategy'), hasChal = b.sections.some(x => x.type === 'challenge');
   return `
   <div class="page-head"><div><h1>${esc(b.title)}</h1><p class="lead">${BOARD_LEAD[kind]}</p></div>
-    <div class="row">${beamerLink(on)}</div>
+    <div class="row">${beamerToggle(kind)}</div>
   </div>
   <div class="grid">
     <section class="panel s12">
@@ -5253,7 +5402,7 @@ function pageMarkt() {
   const total = sum(m.sessions.map(s => s.people.length)), waiting = sum(m.sessions.map(s => s.wait.length));
   return `
   <div class="page-head"><div><h1>Sessionmarkt</h1><p class="lead">Für Projekttage, Stationenlernen oder Fortbildungen: Sessions in Runden anbieten, Plätze begrenzen, Anmeldungen sammeln. Ist eine Session voll, landen weitere Namen automatisch auf der Warteliste.</p></div>
-    <div class="row">${beamerLink(on)}</div>
+    <div class="row">${beamerToggle('market')}</div>
   </div>
   <datalist id="mkNames">${c ? presentStudents(c).sort(byFirst).map(s => `<option value="${esc(displayName(s, c))}">`).join('') : ''}</datalist>
   <div class="grid">
@@ -5315,14 +5464,14 @@ function pageStrategien() {
   const st = store.strats, x = stratSection(), cur = x ? stratOf(x.sid) : null, c = activeClass();
   const open = st.items.filter(i => !st.drawn.includes(i.id)).length;
   return `
-  <div class="page-head"><div><h1>Lernstrategien</h1><p class="lead">Eine Bibliothek mit Lernstrategien für den Check-in. Wähle die Lernstrategie des Tages gezielt aus oder lass den Zufall entscheiden. Sie erscheint im Check-in${c ? ` von ${esc(c.name)}` : ''}. Groß am Beamer zeigst du sie unter Beamer.</p></div></div>
+  <div class="page-head"><div><h1>Lernstrategien</h1><p class="lead">Eine Bibliothek mit Lernstrategien für den Check-in. Wähle die Lernstrategie des Tages gezielt aus oder lass den Zufall entscheiden. Sie erscheint im Check-in${c ? ` von ${esc(c.name)}` : ''}. Mit „Am Beamer zeigen“ erscheint der Check-in mit der Strategie.</p></div></div>
   <div class="grid">
     <section class="panel s7">
       <div class="panel-head"><h2>Lernstrategie des Tages</h2>${st.noRepeat && st.items.length ? `<span class="muted small">${open} von ${st.items.length} noch nicht dran</span>` : ''}</div>
       ${cur ? `<div class="strat-big ${rt.sFlash ? 'pop' : ''}"><strong>${esc(cur.name)}</strong><p>${esc(cur.text)}</p>${cur.link ? `<a href="${esc(cur.link)}" target="_blank" rel="noopener">Mehr erfahren</a>` : ''}</div>` : '<p class="q-current empty">Noch keine Strategie gewählt.</p>'}
       <div class="row">
         <button class="btn primary lg" data-action="strat-random" data-kind="checkin" ${st.items.length ? '' : 'disabled'}>${icon('dice')}Zufällig wählen</button>
-        ${cur ? beamerLink(boardOn('checkin'), boardOn('checkin') ? 'Check-in am Beamer' : 'Zeigen unter Beamer') : ''}
+        ${cur ? beamerToggle('checkin') : ''}
       </div>
       <div class="row" style="margin-top:16px">
         <label class="check"><input type="checkbox" data-change="strat-norepeat" ${st.noRepeat ? 'checked' : ''}><span>Ohne Wiederholung: Jede Strategie kommt einmal dran, bevor es von vorn losgeht.</span></label>
@@ -5368,12 +5517,12 @@ function pageEinstellungen() {
       <p class="muted small">Mit Adresse gibt es im Check-in und Check-out den Knopf <strong>GoPilot-QR</strong>. Der QR-Code öffnet bei den SuS einen vorausgefüllten Eintrag in ihrem GoPilot-Portfolio: die Lernstrategie des Tages oder einen Lerntagebuch-Eintrag mit den Check-out-Fragen. Der Code enthält nur einen Link, es werden keine Daten aus dem Teaching Assistant übertragen. Leer lassen schaltet die Funktion aus.</p>
     </section>
     <section class="panel s6">
-      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 15</span></div>
+      <div class="panel-head"><h2>Über den Teaching Assistant</h2><span class="muted small">Version 16</span></div>
       <dl class="about">
         <dt>Idee und Grundlage</dt><dd><a href="https://classtiles.de" target="_blank" rel="noopener">classtiles.de</a></dd>
-        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Beamer-Zentrale, Menü mit Untermenüs, Gruppengenerator, Mini-Challenge mit H5P, Beamer individuell mit eigenen Feldern, Beamer-Zentrale mit Live-Vorschau, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
+        <dt>Weiterentwicklung</dt><dd>Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Beamer-Zentrale, Menü mit Untermenüs, Gruppengenerator, Mini-Challenge mit H5P, Beamer individuell mit eigenen Feldern, Beamer-Zentrale mit Live-Vorschau, einfachere Bedienung mit Schnellstart und Hilfe, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio</dd>
         <dt>Quellcode</dt><dd><a href="https://github.com/Herr-FR/Gopilot_teaching-assistent" target="_blank" rel="noopener">github.com/Herr-FR/Gopilot_teaching-assistent</a></dd>
-        <dt>Enthaltene Programme</dt><dd>PDF.js (Apache 2.0), mammoth.js (BSD-2) und qrcode-generator (MIT). Die Lizenztexte stehen im Quelltext dieser Datei.</dd>
+        <dt>Enthaltene Programme</dt><dd>PDF.js (Apache 2.0), mammoth.js (BSD-2), qrcode-generator (MIT) und h5p-standalone (MIT). Die Lizenztexte stehen im Quelltext dieser Datei.</dd>
       </dl>
     </section>
     <section class="panel s6">
@@ -5414,6 +5563,7 @@ function renderAll() {
     <div class="warn-dash" data-live="other-dash" role="alert" hidden></div>
     <div class="status" data-live="top-timer" hidden></div>
     <span class="spacer"></span>
+    <button class="btn ghost icon-only" data-action="help" aria-label="Hilfe und Tastenkürzel" title="Hilfe und Tastenkürzel (?)">${icon('question')}</button>
     <button class="btn ghost icon-only" data-action="ui-toggle" aria-label="${dark ? 'Helles Design' : 'Dunkles Design'}" title="${dark ? 'Helles Design' : 'Dunkles Design'}">${icon(dark ? 'sun' : 'moon')}</button>
     <button class="btn primary" data-action="drawer" aria-expanded="${!!rt.drawer}" title="Beamer-Zentrale: alles, was gerade am Beamer zu sehen ist (B)">${icon('screen')}<span> Beamer-Zentrale${store.focus ? ' · Fokus' : ''}</span></button>`;
   const pages = { gruppen: pageGruppen, challenge: pageChallenge, beamer: pageBeamer, unterricht: pageUnterricht, zufall: pageZufall, timer: pageTimer, laut: pageLaut, karten: pageKarten, sterne: pageSterne, fragen: pageFragen, medien: pageMedien, checkin: pageCheckin, strategien: pageStrategien, checkout: pageCheckout, markt: pageMarkt, klassen: pageKlassen, einstellungen: pageEinstellungen };
@@ -5442,7 +5592,7 @@ function openStudentDialog(id) {
       <button class="iconbtn" data-action="dlg-close" aria-label="Schließen">×</button>
     </div>
     <label class="field"><span>Notiz (optional, nur für dich)</span><textarea id="cardNote" rows="2" placeholder="Was ist passiert?"></textarea></label>
-    <p class="muted small cb-note">${icon('screen')}Am Beamer: ${cardBeamerText()}. Einstellen unter Beamer.</p>
+    <p class="muted small cb-note">${icon('screen')}Am Beamer: ${cardBeamerText()}. Einstellen in der Beamer-Zentrale.</p>
     <div class="card-buttons">
       <button class="cardbtn green" data-action="give-card" data-type="green"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICONS.star}</svg><span>Lob</span></button>
       <button class="cardbtn yellow" data-action="give-card" data-type="yellow"><span>Gelbe Karte</span></button>
@@ -5651,6 +5801,15 @@ const actions = {
   'bd-item-del': el => { const x = secOf(el.dataset.kind, el.dataset.sec); if (x) { x.items = x.items.filter(i => i.id !== el.dataset.item); commit(); } },
   'bd-reset': el => armed(el, () => resetBoard(el.dataset.kind)),
   drawer: () => toggleDrawer(),
+  'bt-toggle': el => {
+    const k = BT[el.dataset.kind];
+    if (!k) return;
+    if (k.on()) { store.stage = null; send('event', { name: 'hide' }); commit(); toast('Vom Beamer genommen. Dort läuft jetzt wieder die Uhr.'); }
+    else { k.show(); if (k.on()) toast(`Am Beamer läuft jetzt ${k.label}.`); }
+  },
+  'qs-hide': () => { store.settings.qsDone = true; commit(); toast('Den Schnellstart findest du jederzeit in der Hilfe (?).'); },
+  'qs-show': () => { store.settings.qsDone = false; $('#dlg').close(); rt.page = 'unterricht'; commit(); },
+  help: () => openHelp(),
   'dr-all': () => { rt.page = 'beamer'; rt.navOpen = null; renderAll(); window.scrollTo(0, 0); },
   'dr-page': el => { if (!stagePage(+el.dataset.d)) toast('Hier gibt es nichts zum Blättern.'); },
   'dr-f-add': el => { const f = newField(el.dataset.type, el.dataset.area || 'all'); store.fields.push(f); rt.fOpen = f.id; rt.page = 'beamer'; commit(); toast(`${fType(f.type)[1]} angelegt. Fülle es jetzt aus.`); const i = $(`.bf-editor [data-id="${f.id}"]`); if (i) { i.scrollIntoView({ block: 'center' }); i.focus({ preventScroll: true }); } },
@@ -5826,7 +5985,7 @@ const actions = {
     $('#dlg').close();
     if (!s) return;
     if (store.beamer.picks) { send('event', { name: 'pick', data: { name: displayName(s, c), roll: [] } }); toast(`${fullName(s)} wird am Beamer angezeigt.`); }
-    else toast(`${fullName(s)} ist dran. Namen am Beamer sind unter Beamer ausgeschaltet.`);
+    else toast(`${fullName(s)} ist dran. Namen am Beamer sind in der Beamer-Zentrale ausgeschaltet.`);
   },
   'card-delete': el => {
     const card = store.cards.find(k => k.id === el.dataset.id);
@@ -6091,7 +6250,7 @@ const submits = {
     commit();
     toast('Der Link ist jetzt das Material der Mini-Challenge.');
   },
-  'web-add': f => { const item = addWeb(f.elements.url.value, f.elements.title.value); if (item) { commit(); toast(`${item.name} ist in der Bibliothek. Zeigen kannst du es unter Beamer.`); } },
+  'web-add': f => { const item = addWeb(f.elements.url.value, f.elements.title.value); if (item) { commit(); toast(`${item.name} ist in der Bibliothek. Zeigen kannst du es in der Beamer-Zentrale.`); } },
   'strat-add': f => {
     const name = f.elements.name.value.trim();
     if (!name) return;
@@ -6107,7 +6266,7 @@ const submits = {
     const m = { id: uid(), kind: 'note', cat: 'note', name: title || text.split(/\r?\n/)[0].slice(0, 48), title, text, t: Date.now() };
     store.media.unshift(m);
     commit();
-    toast('Der Text ist in der Bibliothek. Zeigen kannst du ihn unter Beamer.');
+    toast('Der Text ist in der Bibliothek. Zeigen kannst du ihn in der Beamer-Zentrale.');
   },
   'bd-card-add': f => {
     boardCard(f.dataset.kind, f.dataset.sec, f.elements.text.value, false);
@@ -6188,6 +6347,8 @@ function initDashboard() {
   document.addEventListener('submit', e => { const f = e.target.closest('[data-submit]'); if (f) { e.preventDefault(); submits[f.dataset.submit](f); } });
   document.addEventListener('toggle', e => {
     if (!e.target.matches || !e.target.matches('details')) return;
+    if (e.target.matches('[data-bmc]')) { rt.bmcOpen = e.target.open ? e.target.dataset.bmc : (rt.bmcOpen === e.target.dataset.bmc ? null : rt.bmcOpen); if (!e.target.open && rt.fOpen) rt.fOpen = null; return; }
+    if (e.target.matches('[data-acc]')) { rt.accOpen = rt.accOpen || {}; rt.accOpen[e.target.dataset.acc] = e.target.open; return; }
     if (e.target.matches('[data-diag]')) rt.diagOpen = e.target.open;
     else rt.pasteOpen = e.target.open;
   }, true);
@@ -6246,6 +6407,7 @@ function initDashboard() {
     const key = e.key.toLowerCase();
     if (key === 'z') { e.preventDefault(); pickRandom(); }
     else if (key === 'b') { e.preventDefault(); toggleDrawer(); }
+    else if (e.key === '?') { e.preventDefault(); openHelp(); }
     else if (key === ' ' && !e.target.closest('button, a, summary, label')) { e.preventDefault(); timerToggle(); }
     else if (key === 'q') { e.preventDefault(); drawQuestion(); }
     else if ((e.key === 'ArrowRight' || e.key === 'PageDown') && store.stage) { if (stagePage(1)) e.preventDefault(); }

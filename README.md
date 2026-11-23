@@ -13,6 +13,7 @@ Ein Unterrichtsassistent für Tafel und Beamer im Corporate Design der Multi Med
 - Vier Hauptmenüs mit Untermenüs: **Unterricht** (Zufall, Gruppen, Zufallsfragen, Timer, Lautstärke, Sterne, Karten, Klassen), **Beamer** (Medien, Sessionmarkt, Einstellungen), **Check-in** (Lernstrategien) und **Check-out** (Mini-Challenge)
 - Gruppengenerator: zufällig nach Gruppengröße oder Anzahl, von Hand per Drag & Drop oder Antippen, Anzeige am Beamer
 - Mini-Challenge des Tages mit Bibliothek, Zeit, Schwierigkeit, Auflösung und Material (PNG, JPG, PDF, HTML, H5P, Word oder Link), am Touch-Display direkt bearbeitbar
+- Einfache Bedienung: Schnellstart in drei Schritten, „Am Beamer zeigen“ mit einem Klick auf jeder Inhaltsseite, Hilfe mit Tastenkürzeln (Taste ?)
 - **Beamer-Zentrale** (Knopf oben rechts oder Taste B): von jeder Seite aus mit Live-Vorschau steuern, was gerade am Beamer zu sehen ist
 - Beamer individuell: in jedem Bereich einzelne Standardteile aus- und einblenden und eigene Felder (Text, Aufgabe, Liste, Bild, QR-Code, Countdown) mit Position, Größe und Anzeigezeitpunkt hinzufügen
 - Bereich **Beamer** als zentrale Steuerung: Hauptfläche, Einblendungen, Karten, Fokus und Darstellung an einer Stelle
@@ -57,4 +58,4 @@ PDF.js (Apache 2.0), mammoth.js (BSD-2-Clause), qrcode-generator (MIT). Die Lize
 ## Herkunft
 
 - **Idee und Grundlage:** [classtiles.de](https://classtiles.de)
-- **Weiterentwicklung:** Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio, Beamer-Zentrale, Menü mit Untermenüs, Gruppengenerator, Mini-Challenge mit H5P, Beamer individuell mit eigenen Feldern, Beamer-Zentrale mit Live-Vorschau
+- **Weiterentwicklung:** Herr FR, MMBbS Hannover: MMBbS-Design, Medien und Fokus-Modus, Zufallsfragen, Check-in und Check-out, Lernstrategien, Sessionmarkt, Karten am Beamer je Farbe, Betrieb ohne Nachladen, QR-Codes ins GoPilot-Portfolio, Beamer-Zentrale, Menü mit Untermenüs, Gruppengenerator, Mini-Challenge mit H5P, Beamer individuell mit eigenen Feldern, Beamer-Zentrale mit Live-Vorschau, einfachere Bedienung
